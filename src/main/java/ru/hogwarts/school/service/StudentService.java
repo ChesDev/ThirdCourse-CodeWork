@@ -1,41 +1,50 @@
 package ru.hogwarts.school.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.hogwarts.school.model.Student;
+import ru.hogwarts.school.repository.StudentRepository;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
+
 
 @Service
 public class StudentService {
-    private final Map<Long, Student> studentMap = new HashMap<>();
-    private long generatedId = 0L;
+    private final StudentRepository studentRepository;
+
+    @Autowired
+    public StudentService(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
 
     public Student createStudent(Student student) {
-        student.setId(generatedId);
-        studentMap.put(generatedId, student);
-        generatedId++;
-        return student;
+        return studentRepository.save(student);
     }
 
     public Student getStudentById(long id) {
-        return studentMap.get(id);
+        Optional<Student> student = studentRepository.findById(id);
+        return student.orElse(null);
     }
 
     public Student updateStudent(long id, Student student) {
-        studentMap.put(id,student);
-        return student;
+        if (studentRepository.existsById(id)) {
+            student.setId(id);
+            return studentRepository.save(student);
+        }
+        return null;
     }
 
     public Student deleteStudent(long id) {
-        return studentMap.remove(id);
+        Optional<Student> student = studentRepository.findById(id);
+        if (student.isPresent()) {
+            studentRepository.deleteById(id);
+            return student.get();
+        }
+        return null;
     }
 
     public List<Student> getStudentsByAge(int age) {
-        return studentMap.values().stream()
-                .filter(student -> student.getAge() == age)
-                .collect(Collectors.toList());
+        return studentRepository.findByAge(age);
     }
 }
