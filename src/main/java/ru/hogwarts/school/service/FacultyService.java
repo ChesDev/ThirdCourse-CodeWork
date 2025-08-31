@@ -1,41 +1,50 @@
 package ru.hogwarts.school.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.hogwarts.school.model.Faculty;
+import ru.hogwarts.school.repository.FacultyRepository;
 
-import java.util.HashMap;
+
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class FacultyService {
-    private final Map<Long, Faculty> facultyMap = new HashMap<>();
-    private long generatedId = 0L;
+    private final FacultyRepository facultyRepository;
+
+    @Autowired
+    public FacultyService(FacultyRepository facultyRepository) {
+        this.facultyRepository = facultyRepository;
+    }
 
     public Faculty createFaculty(Faculty faculty) {
-        faculty.setId(generatedId);
-        facultyMap.put(generatedId, faculty);
-        generatedId++;
-        return faculty;
+        return facultyRepository.save(faculty);
     }
 
     public Faculty getFacultyById(long id) {
-        return facultyMap.get(id);
+        Optional<Faculty> faculty = facultyRepository.findById(id);
+        return faculty.orElse(null);
     }
 
     public Faculty updateFaculty(long id, Faculty faculty) {
-        facultyMap.put(id ,faculty);
-        return faculty;
+        if (facultyRepository.existsById(id)) {
+            faculty.setId(id);
+            return facultyRepository.save(faculty);
+        }
+        return null;
     }
 
     public Faculty deleteFaculty(long id) {
-        return facultyMap.remove(id);
+        Optional<Faculty> faculty = facultyRepository.findById(id);
+        if (faculty.isPresent()) {
+            facultyRepository.deleteById(id);
+            return faculty.get();
+        }
+        return null;
     }
 
     public List<Faculty> getFacultiesByColor(String color) {
-        return facultyMap.values().stream()
-                .filter(faculty -> faculty.getColor().equalsIgnoreCase(color))
-                .collect(Collectors.toList());
+        return facultyRepository.findByColorIgnoreCase(color);
     }
 }
