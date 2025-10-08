@@ -16,11 +16,11 @@ public class Student {
 
     @ManyToOne
     @JoinColumn(name = "faculty_id")
-    @JsonBackReference
     private Faculty faculty;
 
 
-    public Student() {}
+    public Student() {
+    }
 
     public Student(long id, String name, int age) {
         this.name = name;
