@@ -1,180 +1,279 @@
 package ru.hogwarts.school.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import ru.hogwarts.school.dto.StudentDTO;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.hogwarts.school.dto.SimpleFacultyDTO;
+import ru.hogwarts.school.dto.StudentDTO;
+import ru.hogwarts.school.mapper.FacultyMapper;
+import ru.hogwarts.school.mapper.StudentMapper;
+import ru.hogwarts.school.model.Faculty;
+import ru.hogwarts.school.model.Student;
+import ru.hogwarts.school.service.StudentService;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(StudentController.class)
 class StudentControllerTest {
 
-    @LocalServerPort
-    private int port;
-
     @Autowired
-    private TestRestTemplate restTemplate;
+    private MockMvc mockMvc;
 
-    private String getBaseUrl() {
-        return "http://localhost:" + port + "/student";
+    @Mock
+    private StudentService studentService;
+
+    @Mock
+    private StudentMapper studentMapper;
+
+    @Mock
+    private FacultyMapper facultyMapper;
+
+    @InjectMocks
+    private StudentController studentController;
+
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(studentController).build();
+        objectMapper = new ObjectMapper();
     }
 
     @Test
-    void createStudent() {
+    void createStudent_ShouldReturnCreatedStudent() throws Exception {
+        // Given
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Гарри Поттер");
+        studentDTO.setId(1L);
+        studentDTO.setName("Harry Potter");
         studentDTO.setAge(17);
 
-        ResponseEntity<StudentDTO> response = restTemplate.postForEntity(
-                getBaseUrl(), studentDTO, StudentDTO.class);
+        Student student = new Student();
+        student.setId(1L);
+        student.setName("Harry Potter");
+        student.setAge(17);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Гарри Поттер", response.getBody().getName());
-        assertEquals(17, response.getBody().getAge());
+        when(studentMapper.toEntity(any(StudentDTO.class))).thenReturn(student);
+        when(studentService.createStudent(any(Student.class))).thenReturn(student);
+        when(studentMapper.toDTO(any(Student.class))).thenReturn(studentDTO);
+
+        // When & Then
+        mockMvc.perform(post("/student")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.name").value("Harry Potter"))
+                .andExpect(jsonPath("$.age").value(17));
     }
 
     @Test
-    void getStudent() {
-        // Сначала создаем студента
+    void getStudent_WhenStudentExists_ShouldReturnStudent() throws Exception {
+        // Given
+        Student student = new Student();
+        student.setId(1L);
+        student.setName("Hermione Granger");
+        student.setAge(17);
+
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Гермиона Грейнджер");
+        studentDTO.setId(1L);
+        studentDTO.setName("Hermione Granger");
         studentDTO.setAge(17);
 
-        ResponseEntity<StudentDTO> createResponse = restTemplate.postForEntity(
-                getBaseUrl(), studentDTO, StudentDTO.class);
-        Long studentId = createResponse.getBody().getId();
+        when(studentService.getStudentById(1L)).thenReturn(student);
+        when(studentMapper.toDTO(any(Student.class))).thenReturn(studentDTO);
 
-        // Затем получаем его
-        ResponseEntity<StudentDTO> response = restTemplate.getForEntity(
-                getBaseUrl() + "/" + studentId, StudentDTO.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Гермиона Грейнджер", response.getBody().getName());
+        // When & Then
+        mockMvc.perform(get("/student/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.name").value("Hermione Granger"))
+                .andExpect(jsonPath("$.age").value(17));
     }
 
     @Test
-    void getStudentNotFound() {
-        ResponseEntity<StudentDTO> response = restTemplate.getForEntity(
-                getBaseUrl() + "/9999", StudentDTO.class);
+    void getStudent_WhenStudentNotExists_ShouldReturnNotFound() throws Exception {
+        // Given
+        when(studentService.getStudentById(999L)).thenReturn(null);
 
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        // When & Then
+        mockMvc.perform(get("/student/999"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void getStudentFaculty() {
-        // Создаем студента с факультетом
+    void getStudentFaculty_WhenStudentAndFacultyExist_ShouldReturnFaculty() throws Exception {
+        // Given
+        Student student = new Student();
+        student.setId(1L);
+        Faculty faculty = new Faculty();
+        faculty.setId(1L);
+        faculty.setName("Gryffindor");
+        faculty.setColor("Red");
+        student.setFaculty(faculty);
+
+        SimpleFacultyDTO facultyDTO = new SimpleFacultyDTO(1L, "Gryffindor", "Red");
+
+        when(studentService.getStudentById(1L)).thenReturn(student);
+        when(facultyMapper.toSimpleDTO(any(Faculty.class))).thenReturn(facultyDTO);
+
+        // When & Then
+        mockMvc.perform(get("/student/faculty/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.name").value("Gryffindor"))
+                .andExpect(jsonPath("$.color").value("Red"));
+    }
+
+    @Test
+    void getStudentFaculty_WhenStudentNotExists_ShouldReturnNotFound() throws Exception {
+        // Given
+        when(studentService.getStudentById(999L)).thenReturn(null);
+
+        // When & Then
+        mockMvc.perform(get("/student/faculty/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getStudentsByAge_ShouldReturnStudentsList() throws Exception {
+        // Given
+        Student student = new Student();
+        student.setId(1L);
+        student.setName("Ron Weasley");
+        student.setAge(17);
+
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Рон Уизли");
-        studentDTO.setAge(17);
-        // Предполагаем, что у студента есть facultyId
-
-        ResponseEntity<StudentDTO> createResponse = restTemplate.postForEntity(
-                getBaseUrl(), studentDTO, StudentDTO.class);
-        Long studentId = createResponse.getBody().getId();
-
-        ResponseEntity<SimpleFacultyDTO> response = restTemplate.getForEntity(
-                getBaseUrl() + "/faculty/" + studentId, SimpleFacultyDTO.class);
-
-        // Может вернуть NOT_FOUND или NO_CONTENT в зависимости от наличия факультета
-        assertTrue(response.getStatusCode() == HttpStatus.OK ||
-                response.getStatusCode() == HttpStatus.NO_CONTENT);
-    }
-
-    @Test
-    void getStudentsByAge() {
-        // Создаем студента определенного возраста
-        StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Драко Малфой");
-        studentDTO.setAge(17);
-
-        restTemplate.postForEntity(getBaseUrl(), studentDTO, StudentDTO.class);
-
-        ResponseEntity<StudentDTO[]> response = restTemplate.getForEntity(
-                getBaseUrl() + "/age/17", StudentDTO[].class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-    }
-
-    @Test
-    void getStudentsByAgeBetween() {
-        // Создаем студентов разных возрастов
-        StudentDTO student1 = new StudentDTO();
-        student1.setName("Невилл Лонгботтом");
-        student1.setAge(16);
-
-        StudentDTO student2 = new StudentDTO();
-        student2.setName("Луна Лавгуд");
-        student2.setAge(17);
-
-        restTemplate.postForEntity(getBaseUrl(), student1, StudentDTO.class);
-        restTemplate.postForEntity(getBaseUrl(), student2, StudentDTO.class);
-
-        ResponseEntity<StudentDTO[]> response = restTemplate.getForEntity(
-                getBaseUrl() + "/agebetween/16-18", StudentDTO[].class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-    }
-
-    @Test
-    void updateStudent() {
-        // Создаем студента
-        StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Седрик Диггори");
+        studentDTO.setId(1L);
+        studentDTO.setName("Ron Weasley");
         studentDTO.setAge(17);
 
-        ResponseEntity<StudentDTO> createResponse = restTemplate.postForEntity(
-                getBaseUrl(), studentDTO, StudentDTO.class);
-        StudentDTO createdStudent = createResponse.getBody();
+        when(studentService.getStudentsByAge(17)).thenReturn(List.of(student));
+        when(studentMapper.toDTO(any(Student.class))).thenReturn(studentDTO);
 
-        // Обновляем студента
-        createdStudent.setName("Седрик Диггори (обновленный)");
-        createdStudent.setAge(18);
-
-        ResponseEntity<StudentDTO> response = restTemplate.exchange(
-                getBaseUrl(), HttpMethod.PUT,
-                new HttpEntity<>(createdStudent), StudentDTO.class);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Седрик Диггори (обновленный)", response.getBody().getName());
-        assertEquals(18, response.getBody().getAge());
+        // When & Then
+        mockMvc.perform(get("/student/age/17"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].name").value("Ron Weasley"))
+                .andExpect(jsonPath("$[0].age").value(17));
     }
 
     @Test
-    void deleteStudent() {
-        // Создаем студента
+    void getStudentsByAgeBetween_ShouldReturnStudentsList() throws Exception {
+        // Given
+        Student student = new Student();
+        student.setId(1L);
+        student.setName("Draco Malfoy");
+        student.setAge(16);
+
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Фред Уизли");
+        studentDTO.setId(1L);
+        studentDTO.setName("Draco Malfoy");
+        studentDTO.setAge(16);
+
+        when(studentService.getStudentsByAgeBetween(15, 18)).thenReturn(List.of(student));
+        when(studentMapper.toDTO(any(Student.class))).thenReturn(studentDTO);
+
+        // When & Then
+        mockMvc.perform(get("/student/agebetween/15-18"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].name").value("Draco Malfoy"))
+                .andExpect(jsonPath("$[0].age").value(16));
+    }
+
+    @Test
+    void updateStudent_WhenStudentExists_ShouldReturnUpdatedStudent() throws Exception {
+        // Given
+        StudentDTO studentDTO = new StudentDTO();
+        studentDTO.setId(1L);
+        studentDTO.setName("Harry Potter Updated");
         studentDTO.setAge(18);
 
-        ResponseEntity<StudentDTO> createResponse = restTemplate.postForEntity(
-                getBaseUrl(), studentDTO, StudentDTO.class);
-        Long studentId = createResponse.getBody().getId();
+        Student student = new Student();
+        student.setId(1L);
+        student.setName("Harry Potter Updated");
+        student.setAge(18);
 
-        // Удаляем студента
-        ResponseEntity<StudentDTO> response = restTemplate.exchange(
-                getBaseUrl() + "/" + studentId, HttpMethod.DELETE,
-                null, StudentDTO.class);
+        when(studentMapper.toEntity(any(StudentDTO.class))).thenReturn(student);
+        when(studentService.updateStudent(anyLong(), any(Student.class))).thenReturn(student);
+        when(studentMapper.toDTO(any(Student.class))).thenReturn(studentDTO);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Фред Уизли", response.getBody().getName());
+        // When & Then
+        mockMvc.perform(put("/student")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.name").value("Harry Potter Updated"))
+                .andExpect(jsonPath("$.age").value(18));
+    }
 
-        // Проверяем, что студент удален
-        ResponseEntity<StudentDTO> getResponse = restTemplate.getForEntity(
-                getBaseUrl() + "/" + studentId, StudentDTO.class);
-        assertEquals(HttpStatus.NOT_FOUND, getResponse.getStatusCode());
+    @Test
+    void updateStudent_WhenStudentNotExists_ShouldReturnNotFound() throws Exception {
+        // Given
+        StudentDTO studentDTO = new StudentDTO();
+        studentDTO.setId(999L);
+        studentDTO.setName("Non-existent Student");
+        studentDTO.setAge(20);
+
+        Student student = new Student();
+        student.setId(999L);
+
+        when(studentMapper.toEntity(any(StudentDTO.class))).thenReturn(student);
+        when(studentService.updateStudent(anyLong(), any(Student.class))).thenReturn(null);
+
+        // When & Then
+        mockMvc.perform(put("/student")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(studentDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteStudent_WhenStudentExists_ShouldReturnDeletedStudent() throws Exception {
+        // Given
+        Student student = new Student();
+        student.setId(1L);
+        student.setName("Neville Longbottom");
+        student.setAge(17);
+
+        StudentDTO studentDTO = new StudentDTO();
+        studentDTO.setId(1L);
+        studentDTO.setName("Neville Longbottom");
+        studentDTO.setAge(17);
+
+        when(studentService.getStudentById(1L)).thenReturn(student);
+        when(studentService.deleteStudent(1L)).thenReturn(student);
+        when(studentMapper.toDTO(any(Student.class))).thenReturn(studentDTO);
+
+        // When & Then
+        mockMvc.perform(delete("/student/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.name").value("Neville Longbottom"))
+                .andExpect(jsonPath("$.age").value(17));
+    }
+
+    @Test
+    void deleteStudent_WhenStudentNotExists_ShouldReturnNotFound() throws Exception {
+        // Given
+        when(studentService.getStudentById(999L)).thenReturn(null);
+
+        // When & Then
+        mockMvc.perform(delete("/student/999"))
+                .andExpect(status().isNotFound());
     }
 }
