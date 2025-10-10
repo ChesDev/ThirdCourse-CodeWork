@@ -29,25 +29,31 @@ class StudentControllerTest {
 
     @Test
     void createStudent() {
+        String studentName = "Гарри Поттер";
+        int studentAge = 17;
+
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Гарри Поттер");
-        studentDTO.setAge(17);
+        studentDTO.setName(studentName);
+        studentDTO.setAge(studentAge);
 
         ResponseEntity<StudentDTO> response = restTemplate.postForEntity(
                 getBaseUrl(), studentDTO, StudentDTO.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Гарри Поттер", response.getBody().getName());
-        assertEquals(17, response.getBody().getAge());
+        assertEquals(studentName, response.getBody().getName());
+        assertEquals(studentAge, response.getBody().getAge());
     }
 
     @Test
     void getStudent() {
         // Сначала создаем студента
+        String studentName = "Гермиона Грейнджер";
+        int studentAge = 17;
+
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Гермиона Грейнджер");
-        studentDTO.setAge(17);
+        studentDTO.setName(studentName);
+        studentDTO.setAge(studentAge);
 
         ResponseEntity<StudentDTO> createResponse = restTemplate.postForEntity(
                 getBaseUrl(), studentDTO, StudentDTO.class);
@@ -59,7 +65,7 @@ class StudentControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Гермиона Грейнджер", response.getBody().getName());
+        assertEquals(studentName, response.getBody().getName());
     }
 
     @Test
@@ -73,10 +79,12 @@ class StudentControllerTest {
     @Test
     void getStudentFaculty() {
         // Создаем студента с факультетом
+        String studentName = "Рон Уизли";
+        int studentAge = 17;
+
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Рон Уизли");
-        studentDTO.setAge(17);
-        // Предполагаем, что у студента есть facultyId
+        studentDTO.setName(studentName);
+        studentDTO.setAge(studentAge);
 
         ResponseEntity<StudentDTO> createResponse = restTemplate.postForEntity(
                 getBaseUrl(), studentDTO, StudentDTO.class);
@@ -93,14 +101,17 @@ class StudentControllerTest {
     @Test
     void getStudentsByAge() {
         // Создаем студента определенного возраста
+        String studentName = "Драко Малфой";
+        int studentAge = 17;
+
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Драко Малфой");
-        studentDTO.setAge(17);
+        studentDTO.setName(studentName);
+        studentDTO.setAge(studentAge);
 
         restTemplate.postForEntity(getBaseUrl(), studentDTO, StudentDTO.class);
 
         ResponseEntity<StudentDTO[]> response = restTemplate.getForEntity(
-                getBaseUrl() + "/age/17", StudentDTO[].class);
+                getBaseUrl() + "/age/" + studentAge, StudentDTO[].class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -109,19 +120,26 @@ class StudentControllerTest {
     @Test
     void getStudentsByAgeBetween() {
         // Создаем студентов разных возрастов
+        String student1Name = "Невилл Лонгботтом";
+        int student1Age = 16;
+        String student2Name = "Луна Лавгуд";
+        int student2Age = 17;
+        int minAge = 16;
+        int maxAge = 18;
+
         StudentDTO student1 = new StudentDTO();
-        student1.setName("Невилл Лонгботтом");
-        student1.setAge(16);
+        student1.setName(student1Name);
+        student1.setAge(student1Age);
 
         StudentDTO student2 = new StudentDTO();
-        student2.setName("Луна Лавгуд");
-        student2.setAge(17);
+        student2.setName(student2Name);
+        student2.setAge(student2Age);
 
         restTemplate.postForEntity(getBaseUrl(), student1, StudentDTO.class);
         restTemplate.postForEntity(getBaseUrl(), student2, StudentDTO.class);
 
         ResponseEntity<StudentDTO[]> response = restTemplate.getForEntity(
-                getBaseUrl() + "/agebetween/16-18", StudentDTO[].class);
+                getBaseUrl() + "/agebetween/" + minAge + "-" + maxAge, StudentDTO[].class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -130,17 +148,22 @@ class StudentControllerTest {
     @Test
     void updateStudent() {
         // Создаем студента
+        String oldName = "Седрик Диггори";
+        int oldAge = 17;
+        String newName = "Седрик Диггори (обновленный)";
+        int newAge = 18;
+
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Седрик Диггори");
-        studentDTO.setAge(17);
+        studentDTO.setName(oldName);
+        studentDTO.setAge(oldAge);
 
         ResponseEntity<StudentDTO> createResponse = restTemplate.postForEntity(
                 getBaseUrl(), studentDTO, StudentDTO.class);
         StudentDTO createdStudent = createResponse.getBody();
 
         // Обновляем студента
-        createdStudent.setName("Седрик Диггори (обновленный)");
-        createdStudent.setAge(18);
+        createdStudent.setName(newName);
+        createdStudent.setAge(newAge);
 
         ResponseEntity<StudentDTO> response = restTemplate.exchange(
                 getBaseUrl(), HttpMethod.PUT,
@@ -148,16 +171,19 @@ class StudentControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Седрик Диггори (обновленный)", response.getBody().getName());
-        assertEquals(18, response.getBody().getAge());
+        assertEquals(newName, response.getBody().getName());
+        assertEquals(newAge, response.getBody().getAge());
     }
 
     @Test
     void deleteStudent() {
         // Создаем студента
+        String studentName = "Фред Уизли";
+        int studentAge = 18;
+
         StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setName("Фред Уизли");
-        studentDTO.setAge(18);
+        studentDTO.setName(studentName);
+        studentDTO.setAge(studentAge);
 
         ResponseEntity<StudentDTO> createResponse = restTemplate.postForEntity(
                 getBaseUrl(), studentDTO, StudentDTO.class);
@@ -170,7 +196,7 @@ class StudentControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Фред Уизли", response.getBody().getName());
+        assertEquals(studentName, response.getBody().getName());
 
         // Проверяем, что студент удален
         ResponseEntity<StudentDTO> getResponse = restTemplate.getForEntity(

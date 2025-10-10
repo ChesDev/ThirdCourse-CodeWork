@@ -30,25 +30,31 @@ class FacultyControllerTest {
 
     @Test
     void createFaculty() {
+        String facultyName = "Гриффиндор";
+        String facultyColor = "Красный";
+
         FacultyDTO facultyDTO = new FacultyDTO();
-        facultyDTO.setName("Гриффиндор");
-        facultyDTO.setColor("Красный");
+        facultyDTO.setName(facultyName);
+        facultyDTO.setColor(facultyColor);
 
         ResponseEntity<FacultyDTO> response = restTemplate.postForEntity(
                 getBaseUrl(), facultyDTO, FacultyDTO.class);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Гриффиндор", response.getBody().getName());
-        assertEquals("Красный", response.getBody().getColor());
+        assertEquals(facultyName, response.getBody().getName());
+        assertEquals(facultyColor, response.getBody().getColor());
     }
 
     @Test
     void getFacultyById() {
         // Сначала создаем факультет
+        String facultyName = "Слизерин";
+        String facultyColor = "Зеленый";
+
         FacultyDTO facultyDTO = new FacultyDTO();
-        facultyDTO.setName("Слизерин");
-        facultyDTO.setColor("Зеленый");
+        facultyDTO.setName(facultyName);
+        facultyDTO.setColor(facultyColor);
 
         ResponseEntity<FacultyDTO> createResponse = restTemplate.postForEntity(
                 getBaseUrl(), facultyDTO, FacultyDTO.class);
@@ -60,8 +66,8 @@ class FacultyControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Слизерин", response.getBody().getName());
-        assertEquals("Зеленый", response.getBody().getColor());
+        assertEquals(facultyName, response.getBody().getName());
+        assertEquals(facultyColor, response.getBody().getColor());
     }
 
     @Test
@@ -75,9 +81,12 @@ class FacultyControllerTest {
     @Test
     void getFacultyStudents() {
         // Создаем факультет
+        String facultyName = "Когтевран";
+        String facultyColor = "Синий";
+
         FacultyDTO facultyDTO = new FacultyDTO();
-        facultyDTO.setName("Когтевран");
-        facultyDTO.setColor("Синий");
+        facultyDTO.setName(facultyName);
+        facultyDTO.setColor(facultyColor);
 
         ResponseEntity<FacultyDTO> createResponse = restTemplate.postForEntity(
                 getBaseUrl(), facultyDTO, FacultyDTO.class);
@@ -93,27 +102,32 @@ class FacultyControllerTest {
     @Test
     void getFacultiesByColorOrName() {
         // Создаем факультеты для тестирования
+        String faculty1Name = "Пуффендуй";
+        String faculty1Color = "Желтый";
+        String faculty2Name = "Гриффиндор";
+        String faculty2Color = "Красный";
+
         FacultyDTO faculty1 = new FacultyDTO();
-        faculty1.setName("Пуффендуй");
-        faculty1.setColor("Желтый");
+        faculty1.setName(faculty1Name);
+        faculty1.setColor(faculty1Color);
 
         FacultyDTO faculty2 = new FacultyDTO();
-        faculty2.setName("Гриффиндор");
-        faculty2.setColor("Красный");
+        faculty2.setName(faculty2Name);
+        faculty2.setColor(faculty2Color);
 
         restTemplate.postForEntity(getBaseUrl(), faculty1, FacultyDTO.class);
         restTemplate.postForEntity(getBaseUrl(), faculty2, FacultyDTO.class);
 
         // Тестируем поиск по имени
         ResponseEntity<FacultyDTO[]> responseByName = restTemplate.getForEntity(
-                getBaseUrl() + "?name=Гриффиндор", FacultyDTO[].class);
+                getBaseUrl() + "?name=" + faculty2Name, FacultyDTO[].class);
 
         assertEquals(HttpStatus.OK, responseByName.getStatusCode());
         assertNotNull(responseByName.getBody());
 
         // Тестируем поиск по цвету
         ResponseEntity<FacultyDTO[]> responseByColor = restTemplate.getForEntity(
-                getBaseUrl() + "?color=Желтый", FacultyDTO[].class);
+                getBaseUrl() + "?color=" + faculty1Color, FacultyDTO[].class);
 
         assertEquals(HttpStatus.OK, responseByColor.getStatusCode());
         assertNotNull(responseByColor.getBody());
@@ -129,17 +143,22 @@ class FacultyControllerTest {
     @Test
     void updateFaculty() {
         // Создаем факультет
+        String oldName = "Старое название";
+        String oldColor = "Старый цвет";
+        String newName = "Новое название";
+        String newColor = "Новый цвет";
+
         FacultyDTO facultyDTO = new FacultyDTO();
-        facultyDTO.setName("Старое название");
-        facultyDTO.setColor("Старый цвет");
+        facultyDTO.setName(oldName);
+        facultyDTO.setColor(oldColor);
 
         ResponseEntity<FacultyDTO> createResponse = restTemplate.postForEntity(
                 getBaseUrl(), facultyDTO, FacultyDTO.class);
         FacultyDTO createdFaculty = createResponse.getBody();
 
         // Обновляем факультет
-        createdFaculty.setName("Новое название");
-        createdFaculty.setColor("Новый цвет");
+        createdFaculty.setName(newName);
+        createdFaculty.setColor(newColor);
 
         ResponseEntity<FacultyDTO> response = restTemplate.exchange(
                 getBaseUrl(), HttpMethod.PUT,
@@ -147,16 +166,19 @@ class FacultyControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Новое название", response.getBody().getName());
-        assertEquals("Новый цвет", response.getBody().getColor());
+        assertEquals(newName, response.getBody().getName());
+        assertEquals(newColor, response.getBody().getColor());
     }
 
     @Test
     void deleteFaculty() {
         // Создаем факультет
+        String facultyName = "Факультет для удаления";
+        String facultyColor = "Черный";
+
         FacultyDTO facultyDTO = new FacultyDTO();
-        facultyDTO.setName("Факультет для удаления");
-        facultyDTO.setColor("Черный");
+        facultyDTO.setName(facultyName);
+        facultyDTO.setColor(facultyColor);
 
         ResponseEntity<FacultyDTO> createResponse = restTemplate.postForEntity(
                 getBaseUrl(), facultyDTO, FacultyDTO.class);
@@ -169,7 +191,7 @@ class FacultyControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Факультет для удаления", response.getBody().getName());
+        assertEquals(facultyName, response.getBody().getName());
 
         // Проверяем, что факультет удален
         ResponseEntity<FacultyDTO> getResponse = restTemplate.getForEntity(
