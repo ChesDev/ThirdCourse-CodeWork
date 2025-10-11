@@ -1,15 +1,12 @@
 package ru.hogwarts.school.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.hogwarts.school.dto.SimpleFacultyDTO;
 import ru.hogwarts.school.dto.StudentDTO;
 import ru.hogwarts.school.mapper.FacultyMapper;
@@ -20,7 +17,8 @@ import ru.hogwarts.school.service.StudentService;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -31,37 +29,29 @@ class StudentControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Mock
-    private StudentService studentService;
-
-    @Mock
-    private StudentMapper studentMapper;
-
-    @Mock
-    private FacultyMapper facultyMapper;
-
-    @InjectMocks
-    private StudentController studentController;
-
+    @Autowired
     private ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(studentController).build();
-        objectMapper = new ObjectMapper();
-    }
+    @MockitoBean
+    private StudentService studentService;
+
+    @MockitoBean
+    private StudentMapper studentMapper;
+
+    @MockitoBean
+    private FacultyMapper facultyMapper;
 
     @Test
     void createStudent_ShouldReturnCreatedStudent() throws Exception {
         // Given
         StudentDTO studentDTO = new StudentDTO();
         studentDTO.setId(1L);
-        studentDTO.setName("Harry Potter");
+        studentDTO.setName("Гарри Поттер");
         studentDTO.setAge(17);
 
         Student student = new Student();
         student.setId(1L);
-        student.setName("Harry Potter");
+        student.setName("Гарри Поттер");
         student.setAge(17);
 
         when(studentMapper.toEntity(any(StudentDTO.class))).thenReturn(student);
@@ -74,7 +64,7 @@ class StudentControllerTest {
                         .content(objectMapper.writeValueAsString(studentDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Harry Potter"))
+                .andExpect(jsonPath("$.name").value("Гарри Поттер"))
                 .andExpect(jsonPath("$.age").value(17));
     }
 
@@ -83,12 +73,12 @@ class StudentControllerTest {
         // Given
         Student student = new Student();
         student.setId(1L);
-        student.setName("Hermione Granger");
+        student.setName("Гермиона Грейнджер");
         student.setAge(17);
 
         StudentDTO studentDTO = new StudentDTO();
         studentDTO.setId(1L);
-        studentDTO.setName("Hermione Granger");
+        studentDTO.setName("Гермиона Грейнджер");
         studentDTO.setAge(17);
 
         when(studentService.getStudentById(1L)).thenReturn(student);
@@ -98,7 +88,7 @@ class StudentControllerTest {
         mockMvc.perform(get("/student/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Hermione Granger"))
+                .andExpect(jsonPath("$.name").value("Гермиона Грейнджер"))
                 .andExpect(jsonPath("$.age").value(17));
     }
 
@@ -119,11 +109,11 @@ class StudentControllerTest {
         student.setId(1L);
         Faculty faculty = new Faculty();
         faculty.setId(1L);
-        faculty.setName("Gryffindor");
-        faculty.setColor("Red");
+        faculty.setName("Гриффиндор");
+        faculty.setColor("Красный");
         student.setFaculty(faculty);
 
-        SimpleFacultyDTO facultyDTO = new SimpleFacultyDTO(1L, "Gryffindor", "Red");
+        SimpleFacultyDTO facultyDTO = new SimpleFacultyDTO(1L, "Гриффиндор", "Красный");
 
         when(studentService.getStudentById(1L)).thenReturn(student);
         when(facultyMapper.toSimpleDTO(any(Faculty.class))).thenReturn(facultyDTO);
@@ -132,8 +122,8 @@ class StudentControllerTest {
         mockMvc.perform(get("/student/faculty/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Gryffindor"))
-                .andExpect(jsonPath("$.color").value("Red"));
+                .andExpect(jsonPath("$.name").value("Гриффиндор"))
+                .andExpect(jsonPath("$.color").value("Красный"));
     }
 
     @Test
@@ -151,12 +141,12 @@ class StudentControllerTest {
         // Given
         Student student = new Student();
         student.setId(1L);
-        student.setName("Ron Weasley");
+        student.setName("Рон Уизли");
         student.setAge(17);
 
         StudentDTO studentDTO = new StudentDTO();
         studentDTO.setId(1L);
-        studentDTO.setName("Ron Weasley");
+        studentDTO.setName("Рон Уизли");
         studentDTO.setAge(17);
 
         when(studentService.getStudentsByAge(17)).thenReturn(List.of(student));
@@ -166,7 +156,7 @@ class StudentControllerTest {
         mockMvc.perform(get("/student/age/17"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Ron Weasley"))
+                .andExpect(jsonPath("$[0].name").value("Рон Уизли"))
                 .andExpect(jsonPath("$[0].age").value(17));
     }
 
@@ -175,12 +165,12 @@ class StudentControllerTest {
         // Given
         Student student = new Student();
         student.setId(1L);
-        student.setName("Draco Malfoy");
+        student.setName("Драко Малфой");
         student.setAge(16);
 
         StudentDTO studentDTO = new StudentDTO();
         studentDTO.setId(1L);
-        studentDTO.setName("Draco Malfoy");
+        studentDTO.setName("Драко Малфой");
         studentDTO.setAge(16);
 
         when(studentService.getStudentsByAgeBetween(15, 18)).thenReturn(List.of(student));
@@ -190,7 +180,7 @@ class StudentControllerTest {
         mockMvc.perform(get("/student/agebetween/15-18"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Draco Malfoy"))
+                .andExpect(jsonPath("$[0].name").value("Драко Малфой"))
                 .andExpect(jsonPath("$[0].age").value(16));
     }
 
@@ -199,12 +189,12 @@ class StudentControllerTest {
         // Given
         StudentDTO studentDTO = new StudentDTO();
         studentDTO.setId(1L);
-        studentDTO.setName("Harry Potter Updated");
+        studentDTO.setName("Гарри Поттер Updated");
         studentDTO.setAge(18);
 
         Student student = new Student();
         student.setId(1L);
-        student.setName("Harry Potter Updated");
+        student.setName("Гарри Поттер Updated");
         student.setAge(18);
 
         when(studentMapper.toEntity(any(StudentDTO.class))).thenReturn(student);
@@ -217,7 +207,7 @@ class StudentControllerTest {
                         .content(objectMapper.writeValueAsString(studentDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Harry Potter Updated"))
+                .andExpect(jsonPath("$.name").value("Гарри Поттер Updated"))
                 .andExpect(jsonPath("$.age").value(18));
     }
 
@@ -226,7 +216,7 @@ class StudentControllerTest {
         // Given
         StudentDTO studentDTO = new StudentDTO();
         studentDTO.setId(999L);
-        studentDTO.setName("Non-existent Student");
+        studentDTO.setName("Несуществующий студент");
         studentDTO.setAge(20);
 
         Student student = new Student();
@@ -247,12 +237,12 @@ class StudentControllerTest {
         // Given
         Student student = new Student();
         student.setId(1L);
-        student.setName("Neville Longbottom");
+        student.setName("Невилл Долгопупс");
         student.setAge(17);
 
         StudentDTO studentDTO = new StudentDTO();
         studentDTO.setId(1L);
-        studentDTO.setName("Neville Longbottom");
+        studentDTO.setName("Невилл Долгопупс");
         studentDTO.setAge(17);
 
         when(studentService.getStudentById(1L)).thenReturn(student);
@@ -263,7 +253,7 @@ class StudentControllerTest {
         mockMvc.perform(delete("/student/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Neville Longbottom"))
+                .andExpect(jsonPath("$.name").value("Невилл Долгопупс"))
                 .andExpect(jsonPath("$.age").value(17));
     }
 
