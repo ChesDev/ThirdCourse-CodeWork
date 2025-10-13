@@ -48,15 +48,18 @@ class FacultyControllerTest {
     @Test
     void createFaculty_ShouldReturnCreatedFaculty() throws Exception {
         // Given
+        String facultyName = "Гриффиндор";
+        String facultyColor = "Красный";
+
         FacultyDTO facultyDTO = new FacultyDTO();
         facultyDTO.setId(1L);
-        facultyDTO.setName("Гриффиндор");
-        facultyDTO.setColor("Красный");
+        facultyDTO.setName(facultyName);
+        facultyDTO.setColor(facultyColor);
 
         Faculty faculty = new Faculty();
         faculty.setId(1L);
-        faculty.setName("Гриффиндор");
-        faculty.setColor("Красный");
+        faculty.setName(facultyName);
+        faculty.setColor(facultyColor);
 
         when(facultyMapper.toEntity(any(FacultyDTO.class))).thenReturn(faculty);
         when(facultyService.createFaculty(any(Faculty.class))).thenReturn(faculty);
@@ -68,22 +71,25 @@ class FacultyControllerTest {
                         .content(objectMapper.writeValueAsString(facultyDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Гриффиндор"))
-                .andExpect(jsonPath("$.color").value("Красный"));
+                .andExpect(jsonPath("$.name").value(facultyName))
+                .andExpect(jsonPath("$.color").value(facultyColor));
     }
 
     @Test
     void getFacultyById_WhenFacultyExists_ShouldReturnFaculty() throws Exception {
         // Given
+        String facultyName = "Слизерин";
+        String facultyColor = "Зеленый";
+
         Faculty faculty = new Faculty();
         faculty.setId(1L);
-        faculty.setName("Слизерин");
-        faculty.setColor("Зеленый");
+        faculty.setName(facultyName);
+        faculty.setColor(facultyColor);
 
         FacultyDTO facultyDTO = new FacultyDTO();
         facultyDTO.setId(1L);
-        facultyDTO.setName("Слизерин");
-        facultyDTO.setColor("Зеленый");
+        facultyDTO.setName(facultyName);
+        facultyDTO.setColor(facultyColor);
 
         when(facultyService.getFacultyById(1L)).thenReturn(faculty);
         when(facultyMapper.toDTO(any(Faculty.class))).thenReturn(facultyDTO);
@@ -92,8 +98,8 @@ class FacultyControllerTest {
         mockMvc.perform(get("/faculty/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Слизерин"))
-                .andExpect(jsonPath("$.color").value("Зеленый"));
+                .andExpect(jsonPath("$.name").value(facultyName))
+                .andExpect(jsonPath("$.color").value(facultyColor));
     }
 
     @Test
@@ -109,16 +115,19 @@ class FacultyControllerTest {
     @Test
     void getFacultyStudents_WhenFacultyExists_ShouldReturnStudentsList() throws Exception {
         // Given
+        String facultyName = "Гриффиндор";
+        String studentName = "Гарри Поттер";
+
         Faculty faculty = new Faculty();
         faculty.setId(1L);
-        faculty.setName("Гриффиндор");
+        faculty.setName(facultyName);
 
         Student student = new Student();
         student.setId(1L);
-        student.setName("Гарри Поттер");
+        student.setName(studentName);
         student.setAge(17);
 
-        SimpleStudentDTO studentDTO = new SimpleStudentDTO(1L, "Гарри Поттер", 17);
+        SimpleStudentDTO studentDTO = new SimpleStudentDTO(1L, studentName, 17);
 
         when(facultyService.getFacultyById(1)).thenReturn(faculty);
         when(studentService.getStudentsByFacultyId(1)).thenReturn(List.of(student));
@@ -127,7 +136,7 @@ class FacultyControllerTest {
         mockMvc.perform(get("/faculty/students/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Гарри Поттер"))
+                .andExpect(jsonPath("$[0].name").value(studentName))
                 .andExpect(jsonPath("$[0].age").value(17));
     }
 
@@ -144,26 +153,29 @@ class FacultyControllerTest {
     @Test
     void getFacultiesByColorOrName_WhenNameProvided_ShouldReturnFilteredFaculties() throws Exception {
         // Given
+        String facultyName = "Когтевран";
+        String facultyColor = "Синий";
+
         Faculty faculty = new Faculty();
         faculty.setId(1L);
-        faculty.setName("Когтевран");
-        faculty.setColor("Синий");
+        faculty.setName(facultyName);
+        faculty.setColor(facultyColor);
 
         FacultyDTO facultyDTO = new FacultyDTO();
         facultyDTO.setId(1L);
-        facultyDTO.setName("Когтевран");
-        facultyDTO.setColor("Синий");
+        facultyDTO.setName(facultyName);
+        facultyDTO.setColor(facultyColor);
 
-        when(facultyService.getFacultiesByName("Когтевран")).thenReturn(List.of(faculty));
+        when(facultyService.getFacultiesByName(facultyName)).thenReturn(List.of(faculty));
         when(facultyMapper.toDTO(any(Faculty.class))).thenReturn(facultyDTO);
 
         // When & Then
         mockMvc.perform(get("/faculty")
-                        .param("name", "Когтевран"))
+                        .param("name", facultyName))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Когтевран"))
-                .andExpect(jsonPath("$[0].color").value("Синий"));
+                .andExpect(jsonPath("$[0].name").value(facultyName))
+                .andExpect(jsonPath("$[0].color").value(facultyColor));
     }
 
     @Test
