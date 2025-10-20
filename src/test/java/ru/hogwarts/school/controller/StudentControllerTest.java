@@ -44,15 +44,8 @@ class StudentControllerTest {
     @Test
     void createStudent_ShouldReturnCreatedStudent() throws Exception {
         // Given
-        StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setId(1L);
-        studentDTO.setName("Гарри Поттер");
-        studentDTO.setAge(17);
-
-        Student student = new Student();
-        student.setId(1L);
-        student.setName("Гарри Поттер");
-        student.setAge(17);
+        StudentDTO studentDTO = createStudentDTO(1L, "Гарри Поттер", 17);
+        Student student = createStudent(1L, "Гарри Поттер", 17);
 
         when(studentMapper.toEntity(any(StudentDTO.class))).thenReturn(student);
         when(studentService.createStudent(any(Student.class))).thenReturn(student);
@@ -63,23 +56,16 @@ class StudentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(studentDTO)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Гарри Поттер"))
-                .andExpect(jsonPath("$.age").value(17));
+                .andExpect(jsonPath("$.id").value(studentDTO.getId()))
+                .andExpect(jsonPath("$.name").value(studentDTO.getName()))
+                .andExpect(jsonPath("$.age").value(studentDTO.getAge()));
     }
 
     @Test
     void getStudent_WhenStudentExists_ShouldReturnStudent() throws Exception {
         // Given
-        Student student = new Student();
-        student.setId(1L);
-        student.setName("Гермиона Грейнджер");
-        student.setAge(17);
-
-        StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setId(1L);
-        studentDTO.setName("Гермиона Грейнджер");
-        studentDTO.setAge(17);
+        Student student = createStudent(1L, "Гермиона Грейнджер", 17);
+        StudentDTO studentDTO = createStudentDTO(1L, "Гермиона Грейнджер", 17);
 
         when(studentService.getStudentById(1L)).thenReturn(student);
         when(studentMapper.toDTO(any(Student.class))).thenReturn(studentDTO);
@@ -87,9 +73,9 @@ class StudentControllerTest {
         // When & Then
         mockMvc.perform(get("/student/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Гермиона Грейнджер"))
-                .andExpect(jsonPath("$.age").value(17));
+                .andExpect(jsonPath("$.id").value(studentDTO.getId()))
+                .andExpect(jsonPath("$.name").value(studentDTO.getName()))
+                .andExpect(jsonPath("$.age").value(studentDTO.getAge()));
     }
 
     @Test
@@ -105,15 +91,9 @@ class StudentControllerTest {
     @Test
     void getStudentFaculty_WhenStudentAndFacultyExist_ShouldReturnFaculty() throws Exception {
         // Given
-        Student student = new Student();
-        student.setId(1L);
-        Faculty faculty = new Faculty();
-        faculty.setId(1L);
-        faculty.setName("Гриффиндор");
-        faculty.setColor("Красный");
-        student.setFaculty(faculty);
-
-        SimpleFacultyDTO facultyDTO = new SimpleFacultyDTO(1L, "Гриффиндор", "Красный");
+        Faculty faculty = createFaculty(1L, "Гриффиндор", "Красный");
+        Student student = createStudentWithFaculty(1L, "Гарри Поттер", 17, faculty);
+        SimpleFacultyDTO facultyDTO = createSimpleFacultyDTO(1L, "Гриффиндор", "Красный");
 
         when(studentService.getStudentById(1L)).thenReturn(student);
         when(facultyMapper.toSimpleDTO(any(Faculty.class))).thenReturn(facultyDTO);
@@ -121,9 +101,9 @@ class StudentControllerTest {
         // When & Then
         mockMvc.perform(get("/student/faculty/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Гриффиндор"))
-                .andExpect(jsonPath("$.color").value("Красный"));
+                .andExpect(jsonPath("$.id").value(facultyDTO.getId()))
+                .andExpect(jsonPath("$.name").value(facultyDTO.getName()))
+                .andExpect(jsonPath("$.color").value(facultyDTO.getColor()));
     }
 
     @Test
@@ -139,15 +119,8 @@ class StudentControllerTest {
     @Test
     void getStudentsByAge_ShouldReturnStudentsList() throws Exception {
         // Given
-        Student student = new Student();
-        student.setId(1L);
-        student.setName("Рон Уизли");
-        student.setAge(17);
-
-        StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setId(1L);
-        studentDTO.setName("Рон Уизли");
-        studentDTO.setAge(17);
+        Student student = createStudent(1L, "Рон Уизли", 17);
+        StudentDTO studentDTO = createStudentDTO(1L, "Рон Уизли", 17);
 
         when(studentService.getStudentsByAge(17)).thenReturn(List.of(student));
         when(studentMapper.toDTO(any(Student.class))).thenReturn(studentDTO);
@@ -155,23 +128,16 @@ class StudentControllerTest {
         // When & Then
         mockMvc.perform(get("/student/age/17"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Рон Уизли"))
-                .andExpect(jsonPath("$[0].age").value(17));
+                .andExpect(jsonPath("$[0].id").value(studentDTO.getId()))
+                .andExpect(jsonPath("$[0].name").value(studentDTO.getName()))
+                .andExpect(jsonPath("$[0].age").value(studentDTO.getAge()));
     }
 
     @Test
     void getStudentsByAgeBetween_ShouldReturnStudentsList() throws Exception {
         // Given
-        Student student = new Student();
-        student.setId(1L);
-        student.setName("Драко Малфой");
-        student.setAge(16);
-
-        StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setId(1L);
-        studentDTO.setName("Драко Малфой");
-        studentDTO.setAge(16);
+        Student student = createStudent(1L, "Драко Малфой", 16);
+        StudentDTO studentDTO = createStudentDTO(1L, "Драко Малфой", 16);
 
         when(studentService.getStudentsByAgeBetween(15, 18)).thenReturn(List.of(student));
         when(studentMapper.toDTO(any(Student.class))).thenReturn(studentDTO);
@@ -179,23 +145,16 @@ class StudentControllerTest {
         // When & Then
         mockMvc.perform(get("/student/agebetween/15-18"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Драко Малфой"))
-                .andExpect(jsonPath("$[0].age").value(16));
+                .andExpect(jsonPath("$[0].id").value(studentDTO.getId()))
+                .andExpect(jsonPath("$[0].name").value(studentDTO.getName()))
+                .andExpect(jsonPath("$[0].age").value(studentDTO.getAge()));
     }
 
     @Test
     void updateStudent_WhenStudentExists_ShouldReturnUpdatedStudent() throws Exception {
         // Given
-        StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setId(1L);
-        studentDTO.setName("Гарри Поттер Updated");
-        studentDTO.setAge(18);
-
-        Student student = new Student();
-        student.setId(1L);
-        student.setName("Гарри Поттер Updated");
-        student.setAge(18);
+        StudentDTO studentDTO = createStudentDTO(1L, "Гарри Поттер Updated", 18);
+        Student student = createStudent(1L, "Гарри Поттер Updated", 18);
 
         when(studentMapper.toEntity(any(StudentDTO.class))).thenReturn(student);
         when(studentService.updateStudent(anyLong(), any(Student.class))).thenReturn(student);
@@ -206,21 +165,16 @@ class StudentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(studentDTO)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Гарри Поттер Updated"))
-                .andExpect(jsonPath("$.age").value(18));
+                .andExpect(jsonPath("$.id").value(studentDTO.getId()))
+                .andExpect(jsonPath("$.name").value(studentDTO.getName()))
+                .andExpect(jsonPath("$.age").value(studentDTO.getAge()));
     }
 
     @Test
     void updateStudent_WhenStudentNotExists_ShouldReturnNotFound() throws Exception {
         // Given
-        StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setId(999L);
-        studentDTO.setName("Несуществующий студент");
-        studentDTO.setAge(20);
-
-        Student student = new Student();
-        student.setId(999L);
+        StudentDTO studentDTO = createStudentDTO(999L, "Несуществующий студент", 20);
+        Student student = createStudent(999L, "Несуществующий студент", 20);
 
         when(studentMapper.toEntity(any(StudentDTO.class))).thenReturn(student);
         when(studentService.updateStudent(anyLong(), any(Student.class))).thenReturn(null);
@@ -235,15 +189,8 @@ class StudentControllerTest {
     @Test
     void deleteStudent_WhenStudentExists_ShouldReturnDeletedStudent() throws Exception {
         // Given
-        Student student = new Student();
-        student.setId(1L);
-        student.setName("Невилл Долгопупс");
-        student.setAge(17);
-
-        StudentDTO studentDTO = new StudentDTO();
-        studentDTO.setId(1L);
-        studentDTO.setName("Невилл Долгопупс");
-        studentDTO.setAge(17);
+        Student student = createStudent(1L, "Невилл Долгопупс", 17);
+        StudentDTO studentDTO = createStudentDTO(1L, "Невилл Долгопупс", 17);
 
         when(studentService.getStudentById(1L)).thenReturn(student);
         when(studentService.deleteStudent(1L)).thenReturn(student);
@@ -252,9 +199,9 @@ class StudentControllerTest {
         // When & Then
         mockMvc.perform(delete("/student/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Невилл Долгопупс"))
-                .andExpect(jsonPath("$.age").value(17));
+                .andExpect(jsonPath("$.id").value(studentDTO.getId()))
+                .andExpect(jsonPath("$.name").value(studentDTO.getName()))
+                .andExpect(jsonPath("$.age").value(studentDTO.getAge()));
     }
 
     @Test
@@ -265,5 +212,40 @@ class StudentControllerTest {
         // When & Then
         mockMvc.perform(delete("/student/999"))
                 .andExpect(status().isNotFound());
+    }
+
+    // Вспомогательные методы для создания объектов
+    private Student createStudent(Long id, String name, int age) {
+        Student student = new Student();
+        student.setId(id);
+        student.setName(name);
+        student.setAge(age);
+        return student;
+    }
+
+    private Student createStudentWithFaculty(Long id, String name, int age, Faculty faculty) {
+        Student student = createStudent(id, name, age);
+        student.setFaculty(faculty);
+        return student;
+    }
+
+    private StudentDTO createStudentDTO(Long id, String name, int age) {
+        StudentDTO studentDTO = new StudentDTO();
+        studentDTO.setId(id);
+        studentDTO.setName(name);
+        studentDTO.setAge(age);
+        return studentDTO;
+    }
+
+    private Faculty createFaculty(Long id, String name, String color) {
+        Faculty faculty = new Faculty();
+        faculty.setId(id);
+        faculty.setName(name);
+        faculty.setColor(color);
+        return faculty;
+    }
+
+    private SimpleFacultyDTO createSimpleFacultyDTO(Long id, String name, String color) {
+        return new SimpleFacultyDTO(id, name, color);
     }
 }
