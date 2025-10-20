@@ -15,7 +15,7 @@ import ru.hogwarts.school.dto.SimpleFacultyDTO;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class StudentControllerTest {
+class StudentControllerRestTemplateTest {
 
     @LocalServerPort
     private int port;

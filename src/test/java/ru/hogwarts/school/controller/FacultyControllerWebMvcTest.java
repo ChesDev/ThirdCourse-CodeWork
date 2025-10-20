@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(FacultyController.class)
-class FacultyControllerTest {
+class FacultyControllerWebMvcTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -100,8 +100,7 @@ class FacultyControllerTest {
         SimpleStudentDTO studentDTO = createSimpleStudentDTO(1L, "Гарри Поттер", 17);
 
         when(facultyService.getFacultyById(1L)).thenReturn(faculty);
-        when(studentService.getStudentsByFacultyId(1L)).thenReturn(List.of(student));
-        when(studentMapper.toSimpleDTO(student)).thenReturn(studentDTO);
+        when(studentService.getStudentsByFacultyId(1)).thenReturn(List.of(student));
 
         // When & Then
         mockMvc.perform(get("/faculty/students/1"))
