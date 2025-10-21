@@ -17,6 +17,8 @@ public class Student {
     @JoinColumn(name = "faculty_id")
     private Faculty faculty;
 
+    @OneToOne(mappedBy = "student", cascade = CascadeType.ALL)
+    private Avatar avatar;
 
     public Student() {
     }
@@ -42,6 +44,14 @@ public class Student {
         this.name = name;
     }
 
+    public Avatar getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(Avatar avatar) {
+        this.avatar = avatar;
+    }
+
     public int getAge() {
         return age;
     }
@@ -60,11 +70,7 @@ public class Student {
 
     @Override
     public String toString() {
-        return new StringBuilder("Студент: \n")
-                .append(id).append("\n")
-                .append(name).append("\n")
-                .append(age).append("\n")
-                .toString();
+        return "Студент: \n" + id + "\n" + name + "\n" + age + "\n";
     }
 
     @Override

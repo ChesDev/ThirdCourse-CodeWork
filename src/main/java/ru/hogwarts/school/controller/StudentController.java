@@ -20,9 +20,7 @@ public class StudentController {
     private final StudentMapper studentMapper;
     private final FacultyMapper facultyMapper;
 
-    public StudentController(StudentService studentService,
-                             StudentMapper studentMapper,
-                             FacultyMapper facultyMapper) {
+    public StudentController(StudentService studentService, StudentMapper studentMapper, FacultyMapper facultyMapper) {
         this.studentService = studentService;
         this.studentMapper = studentMapper;
         this.facultyMapper = facultyMapper;
@@ -62,16 +60,12 @@ public class StudentController {
 
     @GetMapping("age/{age}")
     public Collection<StudentDTO> getStudentsByAge(@PathVariable int age) {
-        return studentService.getStudentsByAge(age).stream()
-                .map(studentMapper::toDTO)
-                .collect(Collectors.toList());
+        return studentService.getStudentsByAge(age).stream().map(studentMapper::toDTO).collect(Collectors.toList());
     }
 
     @GetMapping("agebetween/{min}-{max}")
     public Collection<StudentDTO> getStudentsByAgeBetween(@PathVariable int min, @PathVariable int max) {
-        return studentService.getStudentsByAgeBetween(min, max).stream()
-                .map(studentMapper::toDTO)
-                .collect(Collectors.toList());
+        return studentService.getStudentsByAgeBetween(min, max).stream().map(studentMapper::toDTO).collect(Collectors.toList());
     }
 
     @PutMapping()

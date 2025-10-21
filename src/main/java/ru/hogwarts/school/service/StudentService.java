@@ -24,7 +24,10 @@ public class StudentService {
 
     public Student getStudentById(long id) {
         Optional<Student> student = studentRepository.findById(id);
-        return student.orElse(null);
+        if (student.isEmpty()) {
+            throw new RuntimeException("Студент с id: " + id + "не найден");
+        }
+        return student.get();
     }
 
     public Student updateStudent(long id, Student student) {

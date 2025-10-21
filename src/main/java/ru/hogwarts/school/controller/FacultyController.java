@@ -6,7 +6,6 @@ import ru.hogwarts.school.dto.FacultyDTO;
 import ru.hogwarts.school.dto.SimpleFacultyDTO;
 import ru.hogwarts.school.dto.SimpleStudentDTO;
 import ru.hogwarts.school.mapper.FacultyMapper;
-import ru.hogwarts.school.mapper.StudentMapper;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.service.FacultyService;
@@ -22,10 +21,7 @@ public class FacultyController {
     private final StudentService studentService;
     private final FacultyMapper facultyMapper;
 
-    public FacultyController(FacultyService facultyService,
-                             StudentService studentService,
-                             FacultyMapper facultyMapper,
-                             StudentMapper studentMapper) {
+    public FacultyController(FacultyService facultyService, StudentService studentService, FacultyMapper facultyMapper) {
         this.facultyService = facultyService;
         this.studentService = studentService;
         this.facultyMapper = facultyMapper;
@@ -56,20 +52,12 @@ public class FacultyController {
             return ResponseEntity.notFound().build();
         }
         Collection<Student> students = studentService.getStudentsByFacultyId(id);
-        Collection<SimpleStudentDTO> studentDTOs = students.stream()
-                .map(student -> new SimpleStudentDTO(
-                        student.getId(),
-                        student.getName(),
-                        student.getAge()
-                ))
-                .collect(Collectors.toList());
+        Collection<SimpleStudentDTO> studentDTOs = students.stream().map(student -> new SimpleStudentDTO(student.getId(), student.getName(), student.getAge())).collect(Collectors.toList());
         return ResponseEntity.ok(studentDTOs);
     }
 
     @GetMapping
-    public ResponseEntity<Collection<FacultyDTO>> getFacultiesByColorOrName(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String color) {
+    public ResponseEntity<Collection<FacultyDTO>> getFacultiesByColorOrName(@RequestParam(required = false) String name, @RequestParam(required = false) String color) {
 
         Collection<Faculty> faculties;
 
@@ -81,9 +69,7 @@ public class FacultyController {
             faculties = facultyService.getAllFaculties();
         }
 
-        Collection<FacultyDTO> facultyDTOs = faculties.stream()
-                .map(facultyMapper::toDTO)
-                .collect(Collectors.toList());
+        Collection<FacultyDTO> facultyDTOs = faculties.stream().map(facultyMapper::toDTO).collect(Collectors.toList());
 
         return ResponseEntity.ok(facultyDTOs);
     }
