@@ -24,9 +24,7 @@ public class FacultyMapper {
         dto.setColor(faculty.getColor());
 
         if (faculty.getStudents() != null) {
-            List<SimpleStudentDTO> studentDTOs = faculty.getStudents().stream()
-                    .map(this::toSimpleStudentDTO)
-                    .collect(Collectors.toList());
+            List<SimpleStudentDTO> studentDTOs = faculty.getStudents().stream().map(this::toSimpleStudentDTO).collect(Collectors.toList());
             dto.setStudents(studentDTOs);
         }
 
@@ -38,11 +36,7 @@ public class FacultyMapper {
             return null;
         }
 
-        return new SimpleFacultyDTO(
-                faculty.getId(),
-                faculty.getName(),
-                faculty.getColor()
-        );
+        return new SimpleFacultyDTO(faculty.getId(), faculty.getName(), faculty.getColor());
     }
 
     public Faculty toEntity(FacultyDTO dto) {
@@ -63,10 +57,6 @@ public class FacultyMapper {
             return null;
         }
 
-        return new SimpleStudentDTO(
-                student.getId(),
-                student.getName(),
-                student.getAge()
-        );
+        return new SimpleStudentDTO(student.getId(), student.getName(), student.getAge());
     }
 }

@@ -2,7 +2,6 @@ package ru.hogwarts.school.model;
 
 import jakarta.persistence.*;
 
-
 import java.util.Collection;
 import java.util.Objects;
 
@@ -55,11 +54,7 @@ public class Faculty {
 
     @Override
     public String toString() {
-        return new StringBuilder("Факультет: \n")
-                .append(id).append("\n")
-                .append(name).append("\n")
-                .append(color).append("\n")
-                .toString();
+        return "Факультет: \n" + id + "\n" + name + "\n" + color + "\n";
     }
 
     @Override
