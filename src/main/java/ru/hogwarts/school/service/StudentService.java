@@ -2,6 +2,7 @@ package ru.hogwarts.school.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.StudentRepository;
 
@@ -10,6 +11,7 @@ import java.util.Optional;
 
 
 @Service
+@Transactional
 public class StudentService {
     private final StudentRepository studentRepository;
 
@@ -24,10 +26,7 @@ public class StudentService {
 
     public Student getStudentById(long id) {
         Optional<Student> student = studentRepository.findById(id);
-        if (student.isEmpty()) {
-            throw new RuntimeException("Студент с id: " + id + "не найден");
-        }
-        return student.get();
+        return student.orElse(null);
     }
 
     public Student updateStudent(long id, Student student) {
@@ -57,5 +56,17 @@ public class StudentService {
 
     public Collection<Student> getStudentsByFacultyId(int facultyId) {
         return studentRepository.findByFacultyId(facultyId);
+    }
+
+    public Integer getCountOfStudents() {
+        return studentRepository.getCountOfStudents();
+    }
+
+    public Float getAvgAgeOfStudents() {
+        return studentRepository.getAvgAgeOfStudents();
+    }
+
+    public Collection<Student> getLastFiveStudents() {
+        return studentRepository.getLastFiveStudents();
     }
 }

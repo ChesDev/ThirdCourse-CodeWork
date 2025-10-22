@@ -44,6 +44,11 @@ public class StudentController {
         return ResponseEntity.ok(studentDTO);
     }
 
+    @GetMapping ("count")
+    public Integer getCountOfStudents() {
+        return studentService.getCountOfStudents();
+    }
+
     @GetMapping("faculty/{id}")
     public ResponseEntity<SimpleFacultyDTO> getStudentFaculty(@PathVariable long id) {
         Student student = studentService.getStudentById(id);
@@ -58,6 +63,11 @@ public class StudentController {
         return ResponseEntity.ok(facultyDTO);
     }
 
+    @GetMapping ("age/avg")
+    public Float getAvgAgeOfStudents() {
+        return studentService.getAvgAgeOfStudents();
+    }
+
     @GetMapping("age/{age}")
     public Collection<StudentDTO> getStudentsByAge(@PathVariable int age) {
         return studentService.getStudentsByAge(age).stream().map(studentMapper::toDTO).collect(Collectors.toList());
@@ -66,6 +76,11 @@ public class StudentController {
     @GetMapping("agebetween/{min}-{max}")
     public Collection<StudentDTO> getStudentsByAgeBetween(@PathVariable int min, @PathVariable int max) {
         return studentService.getStudentsByAgeBetween(min, max).stream().map(studentMapper::toDTO).collect(Collectors.toList());
+    }
+
+    @GetMapping ("last")
+    public Collection<Student> getLastFiveStudents() {
+        return studentService.getLastFiveStudents();
     }
 
     @PutMapping()
