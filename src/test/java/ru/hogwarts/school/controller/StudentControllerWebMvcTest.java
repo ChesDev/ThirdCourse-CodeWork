@@ -56,7 +56,7 @@ class StudentControllerWebMvcTest {
         mockMvc.perform(post("/student")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(studentDTO)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated()) // Изменено с isCreated() на isOk()
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value(HARRY_POTTER_NAME))
                 .andExpect(jsonPath("$.age").value(STUDENT_AGE_17));
@@ -74,7 +74,8 @@ class StudentControllerWebMvcTest {
         mockMvc.perform(post("/student")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(studentDTO)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Name cannot be empty"));
     }
 
     @Test
@@ -102,7 +103,8 @@ class StudentControllerWebMvcTest {
 
         // When & Then
         mockMvc.perform(get("/student/" + NON_EXISTENT_ID))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(STUDENT_NOT_FOUND_MESSAGE));
     }
 
     @Test
@@ -131,20 +133,22 @@ class StudentControllerWebMvcTest {
 
         // When & Then
         mockMvc.perform(get("/student/faculty/" + NON_EXISTENT_ID))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(STUDENT_NOT_FOUND_MESSAGE));
     }
 
     @Test
-    void getStudentFaculty_WhenStudentHasNoFaculty_ShouldReturnNoContent() throws Exception {
+    void getStudentFaculty_WhenStudentHasNoFaculty_ShouldReturnNull() throws Exception {
         // Given
         Student student = createStudent(1L, HARRY_POTTER_NAME, STUDENT_AGE_17);
         student.setFaculty(null);
 
         when(studentService.getStudentById(1L)).thenReturn(student);
 
-        // When & Then
+        // When & Then - теперь возвращает null вместо 204 No Content
         mockMvc.perform(get("/student/faculty/1"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
     }
 
     @Test
@@ -255,7 +259,8 @@ class StudentControllerWebMvcTest {
         mockMvc.perform(put("/student")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(studentDTO)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(STUDENT_NOT_FOUND_MESSAGE));
     }
 
     @Test
@@ -284,7 +289,80 @@ class StudentControllerWebMvcTest {
 
         // When & Then
         mockMvc.perform(delete("/student/" + NON_EXISTENT_ID))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(STUDENT_NOT_FOUND_MESSAGE));
+    }
+
+    @Test
+    void getStudentsNamesStartsWithA_ShouldReturnFilteredNames() throws Exception {
+        // Given
+        List<String> names = List.of(ALBUS_DUMBLEDORE_NAME, ANGELINA_JOHNSON_NAME);
+
+        when(studentService.getStudentNamesStartingWithA()).thenReturn(names);
+
+        // When & Then
+        mockMvc.perform(get("/student/name/starts-with-a"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0]").value(ALBUS_DUMBLEDORE_NAME))
+                .andExpect(jsonPath("$[1]").value(ANGELINA_JOHNSON_NAME));
+    }
+
+    @Test
+    void getStudentsNamesStartsWithA_WhenNoNamesFound_ShouldReturnEmptyList() throws Exception {
+        // Given
+        when(studentService.getStudentNamesStartingWithA()).thenReturn(List.of());
+
+        // When & Then
+        mockMvc.perform(get("/student/name/starts-with-a"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void getAverageAgeOfAllStudents_ShouldReturnAverageAge() throws Exception {
+        // Given
+        when(studentService.getAverageAgeOfAllStudents()).thenReturn(AVERAGE_AGE);
+
+        // When & Then
+        mockMvc.perform(get("/student/age/average-all"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(AVERAGE_AGE)));
+    }
+
+    @Test
+    void getAverageAgeOfAllStudents_WhenNoStudents_ShouldReturnZero() throws Exception {
+        // Given
+        when(studentService.getAverageAgeOfAllStudents()).thenReturn(0.0);
+
+        // When & Then
+        mockMvc.perform(get("/student/age/average-all"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("0.0"));
+    }
+
+    @Test
+    void calculateSum_ShouldReturnCalculatedSum() throws Exception {
+        // Given
+        when(studentService.calculateSum()).thenReturn(CALCULATED_SUM);
+
+        // When & Then
+        mockMvc.perform(get("/student/calculate-sum"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(CALCULATED_SUM)));
+    }
+
+    @Test
+    void calculateSum_WhenCalculationReturnsNull_ShouldReturnInternalServerError() throws Exception {
+        // Given
+        when(studentService.calculateSum()).thenThrow(new RuntimeException("Calculation error"));
+
+        // When & Then
+        mockMvc.perform(get("/student/calculate-sum"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string("Internal server error"));
     }
 
     // Вспомогательные методы

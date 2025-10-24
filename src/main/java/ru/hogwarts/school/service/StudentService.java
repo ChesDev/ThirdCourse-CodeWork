@@ -11,13 +11,15 @@ import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.StudentRepository;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class StudentService {
-    Logger logger = LoggerFactory.getLogger(StudentService.class);
-
     private final StudentRepository studentRepository;
+    Logger logger = LoggerFactory.getLogger(StudentService.class);
 
     @Autowired
     public StudentService(StudentRepository studentRepository) {
@@ -200,4 +202,61 @@ public class StudentService {
             throw new StudentProcessingException("Error retrieving last five students", e);
         }
     }
+
+    public List<String> getStudentNamesStartingWithA() {
+        logger.info("Fetching student names starting with 'A'");
+        try {
+            List<String> result = studentRepository.findAll().stream()
+                    .parallel()
+                    .map(Student::getName)
+                    .filter(name -> name != null && !name.trim().isEmpty())
+                    .filter(name -> name.toUpperCase().startsWith("А"))
+                    .map(String::toUpperCase)
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            logger.info("Found {} students with names starting with 'A'", result.size());
+            return result;
+        } catch (Exception e) {
+            logger.error("Error fetching student names starting with 'A': {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    public Double getAverageAgeOfAllStudents() {
+        logger.info("Calculating average age of all students");
+        try {
+            Double averageAge = studentRepository.findAll().stream()
+                    .parallel()
+                    .mapToInt(Student::getAge)
+                    .average()
+                    .orElse(0.0);
+
+            logger.info("Average age of students: {}", averageAge);
+            return averageAge;
+        } catch (Exception e) {
+            logger.error("Error calculating average age: {}", e.getMessage(), e);
+            return 0.0;
+        }
+    }
+
+    public Long calculateSum() {
+        logger.info("Calculating sum of numbers from 1 to 1,000,000");
+        try {
+            long startTime = System.currentTimeMillis();
+
+            Long sum = java.util.stream.LongStream.rangeClosed(1, 1_000_000)
+                    .parallel()
+                    .reduce(0L, Long::sum);
+
+            long endTime = System.currentTimeMillis();
+            logger.info("Sum calculation completed in {} ms. Result: {}", (endTime - startTime), sum);
+            return sum;
+        } catch (Exception e) {
+            logger.error("Error calculating sum: {}", e.getMessage(), e);
+            return 0L;
+        }
+    }
+
+
 }

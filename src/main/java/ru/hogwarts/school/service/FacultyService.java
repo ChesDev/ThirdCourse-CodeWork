@@ -10,12 +10,12 @@ import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.repository.FacultyRepository;
 
 import java.util.Collection;
+import java.util.Comparator;
 
 @Service
 public class FacultyService {
-    Logger logger = LoggerFactory.getLogger(FacultyService.class);
-
     private final FacultyRepository facultyRepository;
+    Logger logger = LoggerFactory.getLogger(FacultyService.class);
 
     @Autowired
     public FacultyService(FacultyRepository facultyRepository) {
@@ -158,4 +158,24 @@ public class FacultyService {
             throw new FacultyProcessingException("Error retrieving faculties by name: " + name, e);
         }
     }
+
+    public String getLongestFacultyName() {
+        logger.info("Was invoked method for finding the longest faculty name");
+        try {
+            String longestName = facultyRepository.findAll().stream()
+                    .parallel()
+                    .map(Faculty::getName)
+                    .filter(name -> name != null && !name.trim().isEmpty())
+                    .max(Comparator.comparingInt(String::length))
+                    .orElse("");
+
+            logger.info("Longest faculty name: {} ({} characters)",
+                    longestName, longestName.length());
+            return longestName;
+        } catch (Exception e) {
+            logger.error("Error finding longest faculty name: {}", e.getMessage(), e);
+            return "";
+        }
+    }
+
 }

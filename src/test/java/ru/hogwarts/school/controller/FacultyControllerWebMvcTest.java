@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static ru.hogwarts.school.controller.TestConstants.*;
@@ -57,7 +57,7 @@ class FacultyControllerWebMvcTest {
         mockMvc.perform(post("/faculty")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(facultyDTO)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated()) // Изменено с isCreated() на isOk()
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value(GRYFFINDOR_NAME))
                 .andExpect(jsonPath("$.color").value(GRYFFINDOR_COLOR));
@@ -75,7 +75,8 @@ class FacultyControllerWebMvcTest {
         mockMvc.perform(post("/faculty")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(facultyDTO)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Name cannot be empty"));
     }
 
     @Test
@@ -103,7 +104,8 @@ class FacultyControllerWebMvcTest {
 
         // When & Then
         mockMvc.perform(get("/faculty/" + NON_EXISTENT_ID))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(FACULTY_NOT_FOUND_MESSAGE));
     }
 
     @Test
@@ -120,7 +122,10 @@ class FacultyControllerWebMvcTest {
         mockMvc.perform(get("/faculty/students/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(1));
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value(HARRY_POTTER_NAME))
+                .andExpect(jsonPath("$[0].age").value(STUDENT_AGE_17));
     }
 
     @Test
@@ -131,7 +136,8 @@ class FacultyControllerWebMvcTest {
 
         // When & Then
         mockMvc.perform(get("/faculty/students/" + NON_EXISTENT_ID))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(FACULTY_NOT_FOUND_MESSAGE));
     }
 
     @Test
@@ -244,7 +250,8 @@ class FacultyControllerWebMvcTest {
         mockMvc.perform(put("/faculty")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(facultyDTO)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(FACULTY_NOT_FOUND_MESSAGE));
     }
 
     @Test
@@ -273,7 +280,140 @@ class FacultyControllerWebMvcTest {
 
         // When & Then
         mockMvc.perform(delete("/faculty/" + NON_EXISTENT_ID))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().string(FACULTY_NOT_FOUND_MESSAGE));
+    }
+
+    @Test
+    void getLongestFacultyName_ShouldReturnLongestName() throws Exception {
+        // Given
+        when(facultyService.getLongestFacultyName()).thenReturn(LONGEST_FACULTY_NAME);
+
+        // When & Then
+        mockMvc.perform(get("/faculty/longest-name"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(LONGEST_FACULTY_NAME));
+    }
+
+    @Test
+    void getLongestFacultyName_WhenServiceThrowsException_ShouldReturnInternalServerError() throws Exception {
+        // Given
+        when(facultyService.getLongestFacultyName())
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(get("/faculty/longest-name"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(INTERNAL_SERVER_ERROR_MESSAGE));
+    }
+
+    @Test
+    void getFaculties_WithEmptyNameAndColor_ShouldReturnAllFaculties() throws Exception {
+        // Given
+        Faculty faculty1 = createFaculty(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        Faculty faculty2 = createFaculty(2L, SLYTHERIN_NAME, SLYTHERIN_COLOR);
+        FacultyDTO facultyDTO1 = createFacultyDTO(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        FacultyDTO facultyDTO2 = createFacultyDTO(2L, SLYTHERIN_NAME, SLYTHERIN_COLOR);
+        List<Faculty> faculties = List.of(faculty1, faculty2);
+
+        when(facultyService.getAllFaculties()).thenReturn(faculties);
+        when(facultyMapper.toDTO(faculty1)).thenReturn(facultyDTO1);
+        when(facultyMapper.toDTO(faculty2)).thenReturn(facultyDTO2);
+
+        // When & Then
+        mockMvc.perform(get("/faculty")
+                        .param("name", "")
+                        .param("color", ""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value(GRYFFINDOR_NAME))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].name").value(SLYTHERIN_NAME));
+    }
+
+    @Test
+    void getFaculties_WithBlankNameAndNullColor_ShouldReturnAllFaculties() throws Exception {
+        // Given
+        Faculty faculty = createFaculty(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        FacultyDTO facultyDTO = createFacultyDTO(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        List<Faculty> faculties = List.of(faculty);
+
+        when(facultyService.getAllFaculties()).thenReturn(faculties);
+        when(facultyMapper.toDTO(any(Faculty.class))).thenReturn(facultyDTO);
+
+        // When & Then
+        mockMvc.perform(get("/faculty")
+                        .param("name", "   "))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value(GRYFFINDOR_NAME));
+    }
+
+    @Test
+    void createFaculty_WithInternalServerError_ShouldReturnInternalServerError() throws Exception {
+        // Given
+        FacultyDTO facultyDTO = createFacultyDTO(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+
+        when(facultyMapper.toEntity(any(FacultyDTO.class)))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        // When & Then
+        mockMvc.perform(post("/faculty")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyDTO)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(INTERNAL_SERVER_ERROR_MESSAGE));
+    }
+
+    @Test
+    void updateFaculty_WithValidationError_ShouldReturnBadRequest() throws Exception {
+        // Given
+        FacultyDTO facultyDTO = createFacultyDTO(1L, "", "");
+
+        when(facultyMapper.toEntity(any(FacultyDTO.class)))
+                .thenThrow(new IllegalArgumentException("Color cannot be empty"));
+
+        // When & Then
+        mockMvc.perform(put("/faculty")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Color cannot be empty"));
+    }
+
+    @Test
+    void updateFaculty_WithInternalServerError_ShouldReturnInternalServerError() throws Exception {
+        // Given
+        FacultyDTO facultyDTO = createFacultyDTO(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        Faculty faculty = createFaculty(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+
+        when(facultyMapper.toEntity(any(FacultyDTO.class))).thenReturn(faculty);
+        when(facultyService.updateFaculty(eq(1L), any(Faculty.class)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(put("/faculty")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyDTO)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(INTERNAL_SERVER_ERROR_MESSAGE));
+    }
+
+    @Test
+    void deleteFaculty_WithInternalServerError_ShouldReturnInternalServerError() throws Exception {
+        // Given
+        Faculty faculty = createFaculty(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+
+        when(facultyService.getFacultyById(1L)).thenReturn(faculty);
+        when(facultyService.deleteFaculty(1L))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(delete("/faculty/1"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(INTERNAL_SERVER_ERROR_MESSAGE));
     }
 
     // Вспомогательные методы
