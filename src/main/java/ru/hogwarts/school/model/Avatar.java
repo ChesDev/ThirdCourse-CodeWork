@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import java.util.Arrays;
 import java.util.Objects;
 
-@Entity
+@Entity(name = "avatars")
 public class Avatar {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
