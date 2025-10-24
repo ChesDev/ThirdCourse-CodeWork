@@ -74,6 +74,12 @@ public class FacultyController {
         return ResponseEntity.ok(facultyDTOs);
     }
 
+    @GetMapping("longest-name")
+    public ResponseEntity<String> getLongestFacultyName() {
+        String longestName = facultyService.getLongestFacultyName();
+        return ResponseEntity.ok(longestName);
+    }
+
     @PutMapping
     public ResponseEntity<FacultyDTO> updateFaculty(@RequestBody FacultyDTO facultyDTO) {
         Faculty faculty = facultyMapper.toEntity(facultyDTO);

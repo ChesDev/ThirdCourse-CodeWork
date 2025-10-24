@@ -8,6 +8,8 @@ import ru.hogwarts.school.repository.StudentRepository;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 @Service
@@ -27,23 +29,6 @@ public class StudentService {
     public Student getStudentById(long id) {
         Optional<Student> student = studentRepository.findById(id);
         return student.orElse(null);
-    }
-
-    public Student updateStudent(long id, Student student) {
-        if (studentRepository.existsById(id)) {
-            student.setId(id);
-            return studentRepository.save(student);
-        }
-        return null;
-    }
-
-    public Student deleteStudent(long id) {
-        Optional<Student> student = studentRepository.findById(id);
-        if (student.isPresent()) {
-            studentRepository.deleteById(id);
-            return student.get();
-        }
-        return null;
     }
 
     public Collection<Student> getStudentsByAge(int age) {
@@ -68,5 +53,46 @@ public class StudentService {
 
     public Collection<Student> getLastFiveStudents() {
         return studentRepository.getLastFiveStudents();
+    }
+
+    public Collection<String> getStudentNamesStartingWithA() {
+        return studentRepository.findAll().stream()
+                .map(Student::getName)
+                .filter(name -> name.toUpperCase().startsWith("А"))
+                .sorted()
+                .map(String::toUpperCase)
+                .collect(Collectors.toList());
+    }
+
+    public Double getAverageAgeUsingFindAll() {
+        Collection<Student> students = studentRepository.findAll();
+        return students.stream()
+                .mapToInt(Student::getAge)
+                .average()
+                .orElse(0.0);
+    }
+
+    public Integer calculateOptimizedSum() {
+        return IntStream.iterate(1, a -> a + 1)
+                .parallel()
+                .limit(1_000_000)
+                .reduce(0, Integer::sum);
+    }
+
+    public Student updateStudent(long id, Student student) {
+        if (studentRepository.existsById(id)) {
+            student.setId(id);
+            return studentRepository.save(student);
+        }
+        return null;
+    }
+
+    public Student deleteStudent(long id) {
+        Optional<Student> student = studentRepository.findById(id);
+        if (student.isPresent()) {
+            studentRepository.deleteById(id);
+            return student.get();
+        }
+        return null;
     }
 }
