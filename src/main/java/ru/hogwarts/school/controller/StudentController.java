@@ -44,7 +44,7 @@ public class StudentController {
         return ResponseEntity.ok(studentDTO);
     }
 
-    @GetMapping ("count")
+    @GetMapping("count")
     public Integer getCountOfStudents() {
         return studentService.getCountOfStudents();
     }
@@ -63,7 +63,7 @@ public class StudentController {
         return ResponseEntity.ok(facultyDTO);
     }
 
-    @GetMapping ("age/avg")
+    @GetMapping("age/avg")
     public Float getAvgAgeOfStudents() {
         return studentService.getAvgAgeOfStudents();
     }
@@ -78,9 +78,24 @@ public class StudentController {
         return studentService.getStudentsByAgeBetween(min, max).stream().map(studentMapper::toDTO).collect(Collectors.toList());
     }
 
-    @GetMapping ("last")
+    @GetMapping("last")
     public Collection<Student> getLastFiveStudents() {
         return studentService.getLastFiveStudents();
+    }
+
+    @GetMapping("names-starting-with-a")
+    public Collection<String> getStudentNamesStartingWithA() {
+        return studentService.getStudentNamesStartingWithA();
+    }
+
+    @GetMapping("age/average-all")
+    public Double getAverageAgeUsingFindAll() {
+        return studentService.getAverageAgeUsingFindAll();
+    }
+
+    @GetMapping("optimized-sum")
+    public Integer getOptimizedSum() {
+        return studentService.calculateOptimizedSum();
     }
 
     @PutMapping()
