@@ -1,5 +1,5 @@
 databaseChangeLog:
-  - include:
-      file: liquibase\scripts\studentsAddIndexName.sql
-  - include:
-      file: liquibase\scripts\facultiesAddIndexColorName.sql
+#  - include:
+#      file: liquibase\scripts\studentsAddIndexName.sql
+#  - include:
+#      file: liquibase\scripts\facultiesAddIndexColorName.sql

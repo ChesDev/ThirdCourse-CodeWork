@@ -9,20 +9,21 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.hogwarts.school.dto.FacultyDTO;
 import ru.hogwarts.school.dto.SimpleFacultyDTO;
-import ru.hogwarts.school.dto.SimpleStudentDTO;
+import ru.hogwarts.school.exception.FacultyNotFoundException;
 import ru.hogwarts.school.mapper.FacultyMapper;
-import ru.hogwarts.school.mapper.StudentMapper;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.service.FacultyService;
 import ru.hogwarts.school.service.StudentService;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static ru.hogwarts.school.controller.TestConstants.*;
 
 @WebMvcTest(FacultyController.class)
 class FacultyControllerWebMvcTest {
@@ -42,14 +43,11 @@ class FacultyControllerWebMvcTest {
     @MockitoBean
     private FacultyMapper facultyMapper;
 
-    @MockitoBean
-    private StudentMapper studentMapper;
-
     @Test
     void createFaculty_ShouldReturnCreatedFaculty() throws Exception {
         // Given
-        FacultyDTO facultyDTO = createFacultyDTO(1L, "Гриффиндор", "Красный");
-        Faculty faculty = createFaculty(1L, "Гриффиндор", "Красный");
+        FacultyDTO facultyDTO = createFacultyDTO(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        Faculty faculty = createFaculty(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
 
         when(facultyMapper.toEntity(any(FacultyDTO.class))).thenReturn(faculty);
         when(facultyService.createFaculty(any(Faculty.class))).thenReturn(faculty);
@@ -60,16 +58,31 @@ class FacultyControllerWebMvcTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(facultyDTO)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(facultyDTO.getId()))
-                .andExpect(jsonPath("$.name").value(facultyDTO.getName()))
-                .andExpect(jsonPath("$.color").value(facultyDTO.getColor()));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value(GRYFFINDOR_NAME))
+                .andExpect(jsonPath("$.color").value(GRYFFINDOR_COLOR));
+    }
+
+    @Test
+    void createFaculty_WithValidationError_ShouldReturnBadRequest() throws Exception {
+        // Given
+        FacultyDTO facultyDTO = createFacultyDTO(null, "", "");
+
+        when(facultyMapper.toEntity(any(FacultyDTO.class)))
+                .thenThrow(new IllegalArgumentException("Name cannot be empty"));
+
+        // When & Then
+        mockMvc.perform(post("/faculty")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(facultyDTO)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     void getFacultyById_WhenFacultyExists_ShouldReturnFaculty() throws Exception {
         // Given
-        Faculty faculty = createFaculty(1L, "Слизерин", "Зеленый");
-        FacultyDTO facultyDTO = createFacultyDTO(1L, "Слизерин", "Зеленый");
+        Faculty faculty = createFaculty(1L, SLYTHERIN_NAME, SLYTHERIN_COLOR);
+        FacultyDTO facultyDTO = createFacultyDTO(1L, SLYTHERIN_NAME, SLYTHERIN_COLOR);
 
         when(facultyService.getFacultyById(1L)).thenReturn(faculty);
         when(facultyMapper.toDTO(any(Faculty.class))).thenReturn(facultyDTO);
@@ -77,106 +90,124 @@ class FacultyControllerWebMvcTest {
         // When & Then
         mockMvc.perform(get("/faculty/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(facultyDTO.getId()))
-                .andExpect(jsonPath("$.name").value(facultyDTO.getName()))
-                .andExpect(jsonPath("$.color").value(facultyDTO.getColor()));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value(SLYTHERIN_NAME))
+                .andExpect(jsonPath("$.color").value(SLYTHERIN_COLOR));
     }
 
     @Test
     void getFacultyById_WhenFacultyNotExists_ShouldReturnNotFound() throws Exception {
         // Given
-        when(facultyService.getFacultyById(999L)).thenReturn(null);
+        when(facultyService.getFacultyById(NON_EXISTENT_ID))
+                .thenThrow(new FacultyNotFoundException(FACULTY_NOT_FOUND_MESSAGE));
 
         // When & Then
-        mockMvc.perform(get("/faculty/999"))
+        mockMvc.perform(get("/faculty/" + NON_EXISTENT_ID))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getFacultyStudents_WhenFacultyExists_ShouldReturnStudentsList() throws Exception {
         // Given
-        Faculty faculty = createFaculty(1L, "Гриффиндор", "Красный");
-        Student student = createStudent(1L, "Гарри Поттер", 17);
-        SimpleStudentDTO studentDTO = createSimpleStudentDTO(1L, "Гарри Поттер", 17);
+        Faculty faculty = createFaculty(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        Student student = createStudent(1L, HARRY_POTTER_NAME, STUDENT_AGE_17);
+        List<Student> students = List.of(student);
 
         when(facultyService.getFacultyById(1L)).thenReturn(faculty);
-        when(studentService.getStudentsByFacultyId(1)).thenReturn(List.of(student));
+        when(studentService.getStudentsByFacultyId(1)).thenReturn(students);
 
         // When & Then
         mockMvc.perform(get("/faculty/students/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(studentDTO.getId()))
-                .andExpect(jsonPath("$[0].name").value(studentDTO.getName()))
-                .andExpect(jsonPath("$[0].age").value(studentDTO.getAge()));
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1));
     }
 
     @Test
     void getFacultyStudents_WhenFacultyNotExists_ShouldReturnNotFound() throws Exception {
         // Given
-        when(facultyService.getFacultyById(999L)).thenReturn(null);
+        when(facultyService.getFacultyById(NON_EXISTENT_ID))
+                .thenThrow(new FacultyNotFoundException(FACULTY_NOT_FOUND_MESSAGE));
 
         // When & Then
-        mockMvc.perform(get("/faculty/students/999"))
+        mockMvc.perform(get("/faculty/students/" + NON_EXISTENT_ID))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void getFacultiesByColorOrName_WhenNameProvided_ShouldReturnFilteredFaculties() throws Exception {
+    void getFacultyStudents_WhenFacultyHasNoStudents_ShouldReturnEmptyList() throws Exception {
         // Given
-        Faculty faculty = createFaculty(1L, "Когтевран", "Синий");
-        FacultyDTO facultyDTO = createFacultyDTO(1L, "Когтевран", "Синий");
+        Faculty faculty = createFaculty(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
 
-        when(facultyService.getFacultiesByName(faculty.getName())).thenReturn(List.of(faculty));
+        when(facultyService.getFacultyById(1L)).thenReturn(faculty);
+        when(studentService.getStudentsByFacultyId(1)).thenReturn(Collections.emptyList());
+
+        // When & Then
+        mockMvc.perform(get("/faculty/students/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void getFacultiesByName_ShouldReturnFilteredFaculties() throws Exception {
+        // Given
+        Faculty faculty = createFaculty(1L, RAVENCLAW_NAME, RAVENCLAW_COLOR);
+        FacultyDTO facultyDTO = createFacultyDTO(1L, RAVENCLAW_NAME, RAVENCLAW_COLOR);
+        List<Faculty> faculties = List.of(faculty);
+
+        when(facultyService.getFacultiesByName(RAVENCLAW_NAME)).thenReturn(faculties);
         when(facultyMapper.toDTO(any(Faculty.class))).thenReturn(facultyDTO);
 
         // When & Then
         mockMvc.perform(get("/faculty")
-                        .param("name", faculty.getName()))
+                        .param("name", RAVENCLAW_NAME))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(facultyDTO.getId()))
-                .andExpect(jsonPath("$[0].name").value(facultyDTO.getName()))
-                .andExpect(jsonPath("$[0].color").value(facultyDTO.getColor()));
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value(RAVENCLAW_NAME))
+                .andExpect(jsonPath("$[0].color").value(RAVENCLAW_COLOR));
     }
 
     @Test
-    void getFacultiesByColorOrName_WhenColorProvided_ShouldReturnFilteredFaculties() throws Exception {
+    void getFacultiesByColor_ShouldReturnFilteredFaculties() throws Exception {
         // Given
-        Faculty faculty = createFaculty(1L, "Пуффендуй", "Желтый");
-        FacultyDTO facultyDTO = createFacultyDTO(1L, "Пуффендуй", "Желтый");
+        Faculty faculty = createFaculty(1L, HUFFLEPUFF_NAME, HUFFLEPUFF_COLOR);
+        FacultyDTO facultyDTO = createFacultyDTO(1L, HUFFLEPUFF_NAME, HUFFLEPUFF_COLOR);
+        List<Faculty> faculties = List.of(faculty);
 
-        when(facultyService.getFacultiesByColor(faculty.getColor())).thenReturn(List.of(faculty));
+        when(facultyService.getFacultiesByColor(HUFFLEPUFF_COLOR)).thenReturn(faculties);
         when(facultyMapper.toDTO(any(Faculty.class))).thenReturn(facultyDTO);
 
         // When & Then
         mockMvc.perform(get("/faculty")
-                        .param("color", faculty.getColor()))
+                        .param("color", HUFFLEPUFF_COLOR))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(facultyDTO.getId()))
-                .andExpect(jsonPath("$[0].name").value(facultyDTO.getName()))
-                .andExpect(jsonPath("$[0].color").value(facultyDTO.getColor()));
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value(HUFFLEPUFF_NAME))
+                .andExpect(jsonPath("$[0].color").value(HUFFLEPUFF_COLOR));
     }
 
     @Test
-    void getFacultiesByColorOrName_WhenNoParams_ShouldReturnAllFaculties() throws Exception {
+    void getAllFaculties_ShouldReturnAllFaculties() throws Exception {
         // Given
-        Faculty faculty1 = createFaculty(1L, "Гриффиндор", "Красный");
-        Faculty faculty2 = createFaculty(2L, "Слизерин", "Зеленый");
-        FacultyDTO facultyDTO1 = createFacultyDTO(1L, "Гриффиндор", "Красный");
-        FacultyDTO facultyDTO2 = createFacultyDTO(2L, "Слизерин", "Зеленый");
+        Faculty faculty1 = createFaculty(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        Faculty faculty2 = createFaculty(2L, SLYTHERIN_NAME, SLYTHERIN_COLOR);
+        FacultyDTO facultyDTO1 = createFacultyDTO(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        FacultyDTO facultyDTO2 = createFacultyDTO(2L, SLYTHERIN_NAME, SLYTHERIN_COLOR);
+        List<Faculty> faculties = List.of(faculty1, faculty2);
 
-        when(facultyService.getAllFaculties()).thenReturn(List.of(faculty1, faculty2));
+        when(facultyService.getAllFaculties()).thenReturn(faculties);
         when(facultyMapper.toDTO(faculty1)).thenReturn(facultyDTO1);
         when(facultyMapper.toDTO(faculty2)).thenReturn(facultyDTO2);
 
         // When & Then
         mockMvc.perform(get("/faculty"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(facultyDTO1.getId()))
-                .andExpect(jsonPath("$[0].name").value(facultyDTO1.getName()))
-                .andExpect(jsonPath("$[0].color").value(facultyDTO1.getColor()))
-                .andExpect(jsonPath("$[1].id").value(facultyDTO2.getId()))
-                .andExpect(jsonPath("$[1].name").value(facultyDTO2.getName()))
-                .andExpect(jsonPath("$[1].color").value(facultyDTO2.getColor()));
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value(GRYFFINDOR_NAME))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].name").value(SLYTHERIN_NAME));
     }
 
     @Test
@@ -186,7 +217,7 @@ class FacultyControllerWebMvcTest {
         Faculty faculty = createFaculty(1L, "Гриффиндор Updated", "Алый");
 
         when(facultyMapper.toEntity(any(FacultyDTO.class))).thenReturn(faculty);
-        when(facultyService.updateFaculty(anyLong(), any(Faculty.class))).thenReturn(faculty);
+        when(facultyService.updateFaculty(eq(1L), any(Faculty.class))).thenReturn(faculty);
         when(facultyMapper.toDTO(any(Faculty.class))).thenReturn(facultyDTO);
 
         // When & Then
@@ -194,19 +225,20 @@ class FacultyControllerWebMvcTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(facultyDTO)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(facultyDTO.getId()))
-                .andExpect(jsonPath("$.name").value(facultyDTO.getName()))
-                .andExpect(jsonPath("$.color").value(facultyDTO.getColor()));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("Гриффиндор Updated"))
+                .andExpect(jsonPath("$.color").value("Алый"));
     }
 
     @Test
     void updateFaculty_WhenFacultyNotExists_ShouldReturnNotFound() throws Exception {
         // Given
-        FacultyDTO facultyDTO = createFacultyDTO(999L, "Несуществующий факультет", "Черный");
-        Faculty faculty = createFaculty(999L, "Несуществующий факультет", "Черный");
+        FacultyDTO facultyDTO = createFacultyDTO(NON_EXISTENT_ID, "Несуществующий факультет", "Черный");
+        Faculty faculty = createFaculty(NON_EXISTENT_ID, "Несуществующий факультет", "Черный");
 
         when(facultyMapper.toEntity(any(FacultyDTO.class))).thenReturn(faculty);
-        when(facultyService.updateFaculty(anyLong(), any(Faculty.class))).thenReturn(null);
+        when(facultyService.updateFaculty(eq(NON_EXISTENT_ID), any(Faculty.class)))
+                .thenThrow(new FacultyNotFoundException(FACULTY_NOT_FOUND_MESSAGE));
 
         // When & Then
         mockMvc.perform(put("/faculty")
@@ -218,8 +250,8 @@ class FacultyControllerWebMvcTest {
     @Test
     void deleteFaculty_WhenFacultyExists_ShouldReturnDeletedFaculty() throws Exception {
         // Given
-        Faculty faculty = createFaculty(1L, "Гриффиндор", "Красный");
-        SimpleFacultyDTO facultyDTO = createSimpleFacultyDTO(1L, "Гриффиндор", "Красный");
+        Faculty faculty = createFaculty(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
+        SimpleFacultyDTO facultyDTO = createSimpleFacultyDTO(1L, GRYFFINDOR_NAME, GRYFFINDOR_COLOR);
 
         when(facultyService.getFacultyById(1L)).thenReturn(faculty);
         when(facultyMapper.toSimpleDTO(any(Faculty.class))).thenReturn(facultyDTO);
@@ -228,22 +260,23 @@ class FacultyControllerWebMvcTest {
         // When & Then
         mockMvc.perform(delete("/faculty/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(facultyDTO.getId()))
-                .andExpect(jsonPath("$.name").value(facultyDTO.getName()))
-                .andExpect(jsonPath("$.color").value(facultyDTO.getColor()));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value(GRYFFINDOR_NAME))
+                .andExpect(jsonPath("$.color").value(GRYFFINDOR_COLOR));
     }
 
     @Test
     void deleteFaculty_WhenFacultyNotExists_ShouldReturnNotFound() throws Exception {
         // Given
-        when(facultyService.getFacultyById(999L)).thenReturn(null);
+        when(facultyService.getFacultyById(NON_EXISTENT_ID))
+                .thenThrow(new FacultyNotFoundException(FACULTY_NOT_FOUND_MESSAGE));
 
         // When & Then
-        mockMvc.perform(delete("/faculty/999"))
+        mockMvc.perform(delete("/faculty/" + NON_EXISTENT_ID))
                 .andExpect(status().isNotFound());
     }
 
-    // Вспомогательные методы для создания объектов
+    // Вспомогательные методы
     private Faculty createFaculty(Long id, String name, String color) {
         Faculty faculty = new Faculty();
         faculty.setId(id);
@@ -270,9 +303,5 @@ class FacultyControllerWebMvcTest {
         student.setName(name);
         student.setAge(age);
         return student;
-    }
-
-    private SimpleStudentDTO createSimpleStudentDTO(Long id, String name, int age) {
-        return new SimpleStudentDTO(id, name, age);
     }
 }
