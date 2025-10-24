@@ -83,6 +83,18 @@ public class StudentController {
         return studentService.getLastFiveStudents();
     }
 
+    @GetMapping("print-parallel")
+    public void printStudentsParallel() {
+        Collection<Student> students = studentService.getFirstSixStudents();
+        studentService.printParallel(students);
+    }
+
+    @GetMapping("print-synchronized")
+    public void printStudentsSynchronized() {
+        Collection<Student> students = studentService.getFirstSixStudents();
+        studentService.printSynchronized(students);
+    }
+
     @PutMapping()
     public ResponseEntity<StudentDTO> updateStudent(@RequestBody StudentDTO studentDTO) {
         Student student = studentMapper.toEntity(studentDTO);
