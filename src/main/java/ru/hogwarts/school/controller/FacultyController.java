@@ -145,6 +145,12 @@ public class FacultyController {
         }
     }
 
+    @GetMapping("longest-name")
+    public ResponseEntity<String> getLongestFacultyName() {
+        String longestName = facultyService.getLongestFacultyName();
+        return ResponseEntity.ok(longestName);
+    }
+
     @PutMapping
     public ResponseEntity<?> updateFaculty(@RequestBody FacultyDTO facultyDTO) {
         logger.info("Received request to update faculty with id: {}", facultyDTO.getId());

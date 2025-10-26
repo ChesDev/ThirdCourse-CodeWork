@@ -79,21 +79,8 @@ public class StudentController {
     }
 
     @GetMapping("count")
-    public ResponseEntity<?> getCountOfStudents() {
-        logger.info("Received request to get student count");
-
-        try {
-            Integer count = studentService.getCountOfStudents();
-            logger.info("Student count: {}", count);
-            return ResponseEntity.ok(count);
-
-        } catch (StudentProcessingException e) {
-            logger.error("Error retrieving student count", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving student count");
-        } catch (Exception e) {
-            logger.error("Unexpected error retrieving student count", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error retrieving student count");
-        }
+    public Integer getCountOfStudents() {
+        return studentService.getCountOfStudents();
     }
 
     @GetMapping("faculty/{id}")
@@ -126,21 +113,8 @@ public class StudentController {
     }
 
     @GetMapping("age/avg")
-    public ResponseEntity<?> getAvgAgeOfStudents() {
-        logger.info("Received request to get average age of students");
-
-        try {
-            Float avgAge = studentService.getAvgAgeOfStudents();
-            logger.info("Average student age: {}", avgAge);
-            return ResponseEntity.ok(avgAge);
-
-        } catch (StudentProcessingException e) {
-            logger.error("Error calculating average age of students", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error calculating average age");
-        } catch (Exception e) {
-            logger.error("Unexpected error calculating average age of students", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error calculating average age");
-        }
+    public Float getAvgAgeOfStudents() {
+        return studentService.getAvgAgeOfStudents();
     }
 
     @GetMapping("age/{age}")
@@ -192,21 +166,23 @@ public class StudentController {
     }
 
     @GetMapping("last")
-    public ResponseEntity<?> getLastFiveStudents() {
-        logger.info("Received request to get last five students");
+    public Collection<Student> getLastFiveStudents() {
+        return studentService.getLastFiveStudents();
+    }
 
-        try {
-            Collection<Student> students = studentService.getLastFiveStudents();
-            logger.info("Retrieved {} last students", students.size());
-            return ResponseEntity.ok(students);
+    @GetMapping("names-starting-with-a")
+    public Collection<String> getStudentNamesStartingWithA() {
+        return studentService.getStudentNamesStartingWithA();
+    }
 
-        } catch (StudentProcessingException e) {
-            logger.error("Error retrieving last five students", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving last five students");
-        } catch (Exception e) {
-            logger.error("Unexpected error retrieving last five students", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error retrieving last students");
-        }
+    @GetMapping("age/average-all")
+    public Double getAverageAgeUsingFindAll() {
+        return studentService.getAverageAgeUsingFindAll();
+    }
+
+    @GetMapping("optimized-sum")
+    public Integer getOptimizedSum() {
+        return studentService.calculateOptimizedSum();
     }
 
     @PutMapping()

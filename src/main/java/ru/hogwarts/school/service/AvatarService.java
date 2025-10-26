@@ -18,7 +18,6 @@ import ru.hogwarts.school.repository.AvatarRepository;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -51,24 +50,8 @@ public class AvatarService {
     }
 
     public List<Avatar> getAllAvatars(Integer pageNumber, Integer pageSize) {
-        logger.info("Was invoked method for get all avatars");
-        try {
-            if (pageNumber == null || pageNumber < 1) {
-                throw new IllegalArgumentException("Page number must be greater than 0");
-            }
-            if (pageSize == null || pageSize < 1) {
-                throw new IllegalArgumentException("Page size must be greater than 0");
-            }
-
-            PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
-            return avatarRepository.findAll(pageRequest).getContent();
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid pagination parameters: pageNumber={}, pageSize={}", pageNumber, pageSize, e);
-            throw e;
-        } catch (Exception e) {
-            logger.error("Error retrieving avatars list", e);
-            throw new AvatarProcessingException("Error retrieving avatars list", e);
-        }
+        PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
+        return avatarRepository.findAll(pageRequest).getContent();
     }
 
     public void uploadAvatar(Long studentId, MultipartFile file) throws IOException {

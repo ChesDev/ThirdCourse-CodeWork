@@ -10,6 +10,8 @@ import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.repository.FacultyRepository;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Optional;
 
 @Service
 public class FacultyService {
@@ -157,5 +159,12 @@ public class FacultyService {
             logger.error("Error retrieving faculties by name: {}", name, e);
             throw new FacultyProcessingException("Error retrieving faculties by name: " + name, e);
         }
+    }
+
+    public String getLongestFacultyName() {
+        return facultyRepository.findAll().stream()
+                .map(Faculty::getName)
+                .max(Comparator.comparingInt(String::length))
+                .orElse("");
     }
 }
